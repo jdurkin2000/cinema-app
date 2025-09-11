@@ -1,0 +1,3 @@
+spring.application.name=cinema
+spring.data.mongodb.uri={URI_STRING}
+spring.data.mongodb.database=sample_mflix
