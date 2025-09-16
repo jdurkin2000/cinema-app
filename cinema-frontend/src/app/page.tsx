@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 export default function Home() {
   const [helloText, setHelloText] = useState("Fetching api text...");
   useEffect(() => {
-    fetch("http://localhost:8080/api/hello")
+    fetch("http://localhost:8080/api/users/findall")
       .then(res => res.text())
       .then(data => setHelloText(data))
       .catch(err => console.error(err))

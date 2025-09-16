@@ -1,6 +1,6 @@
 package edu.uga.csci4050.cinema.types;
 
-public enum Rating {
+public enum RatingCode {
     G,
     PG,
     PG13,
