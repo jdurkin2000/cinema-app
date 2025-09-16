@@ -5,15 +5,15 @@ import { useEffect, useState } from "react";
 export default function Home() {
   const [helloText, setHelloText] = useState("Fetching api text...");
   useEffect(() => {
-    fetch("http://localhost:8080/api/users/findall")
-      .then(res => res.text())
-      .then(data => setHelloText(data))
+    fetch("http://localhost:8080/api/movies?title=Wild and Woolly")
+      .then(res => res.json())
+      .then(data => setHelloText(JSON.stringify(data, null, 2)))
       .catch(err => console.error(err))
   })
 
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <p className="text-5xl">{helloText}</p>
+    <div className="flex font-sans items-center justify-items-center">
+      <pre className="text-xl">{helloText}</pre>
     </div>
   );
 }

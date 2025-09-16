@@ -23,8 +23,8 @@ public class HttpUtils {
         return ResponseEntity.ok(item);
     }
 
-    public static <T> ResponseEntity<T> buildResponseEntity(Optional<T> opt, String notFoundMsg)
-            throws ResponseStatusException {
-        return opt.map(item -> buildResponseEntity(item, notFoundMsg));
-    }
+    // public static <T> ResponseEntity<T> buildResponseEntity(Optional<T> opt, String notFoundMsg)
+    //         throws ResponseStatusException {
+    //     return opt.map(item -> buildResponseEntity(item, notFoundMsg));
+    // }
 }

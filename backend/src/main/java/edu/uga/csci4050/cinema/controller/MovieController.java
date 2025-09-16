@@ -26,27 +26,32 @@ public class MovieController {
     }
 
     @GetMapping
-    public ResponseEntity<List<MovieItem>> getMoviesByTitle(@RequestParam String title) {
+    public ResponseEntity<List<MovieItem>> getMovies(
+            @RequestParam(required = false) String title,
+            @RequestParam(required = false) String genre,
+            @RequestParam(required = false) String showtime) {
+
+        if (title != null) {
+            return HttpUtils.buildResponseEntity(
+                    movieRepository.findByTitle(title),
+                    "Could not find movie with title " + title);
+        }
+
+        if (genre != null) {
+            return HttpUtils.buildResponseEntity(
+                    movieRepository.findByGenre(genre),
+                    "Could not find any movies with genre " + genre);
+        }
+
+        if (showtime != null) {
+            return HttpUtils.buildResponseEntity(
+                    movieRepository.findByShowtimes(LocalDateTime.parse(showtime)),
+                    "Could not find any movies with showtime " + showtime);
+        }
+
         return HttpUtils.buildResponseEntity(
-                movieRepository.findByTitle(title), "Could not find movie with title " + title);
+                movieRepository.findAll(),
+                "No movies are currently stored in database");
     }
 
-    @GetMapping
-    public ResponseEntity<List<MovieItem>> getMoviesByGenre(@RequestParam String genre) {
-        return HttpUtils.buildResponseEntity(
-                movieRepository.findByGenre(genre), "Could not find any movies with genre " + genre);
-    }
-
-    @GetMapping
-    public ResponseEntity<List<MovieItem>> getMoviesByShowtime(@RequestParam String showtime) {
-        return HttpUtils.buildResponseEntity(
-                movieRepository.findByShowtimes(LocalDateTime.parse(showtime)),
-                "Could not find any movies with showtime " + showtime);
-    }
-
-    @GetMapping
-    public ResponseEntity<List<MovieItem>> getAllMovies() {
-        return HttpUtils.buildResponseEntity(
-                movieRepository.findAll(),  "No movies are currently stored in database");
-    }
 }
