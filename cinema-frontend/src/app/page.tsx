@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from 'next/image'
 import './page.css'
+import logo from './assets/logo.png'
 
 export default function Home() {
   const loadingMovie = {
@@ -22,6 +23,7 @@ export default function Home() {
   return (
     <div className="flex flex-col font-sans items-center justify-items-center">
       <nav className="topnav">
+        <Image src={logo} alt="Site Logo" className="nav-logo" />
         <div className = "nav-links">
            <a href="#home">Home</a>
           <a href="#browse">Browse Movies</a>
@@ -29,9 +31,10 @@ export default function Home() {
         </div>
       </nav>
 
-
       <div className="content">
+        <p className="now-showing">Now Showing</p>
         <pre className="text-xl">{movie.trailer}</pre>
+        
         <p>{movie.synopsis}</p>
         <Image
           src={movie.poster}

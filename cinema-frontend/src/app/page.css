@@ -1,27 +1,20 @@
+html, body {
+  height: 100%;          /* ensure they stretch the full viewport */
+  margin: 0;             /* remove default margins */
+  background-color: #313131; /* choose any color */
+}
+
+
 .topnav {
   display: flex;
   align-items: center;
   position: fixed;
   top: 0;
   width: 100%;
-  height: 60px;
-  background: linear-gradient(to bottom, #313131 50%, #7300ff  50%);;
+  height: 8vh;
+  background: linear-gradient(to bottom, #5400bb  50%, #7300ff  50%);;
   padding: 0 20px;
   z-index: 1000;
-}
-
-.topnav::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 50%;
-  width: 150%;       /* make it wide enough to cover diagonally */
-  height: 100%;
-  background-color: #313131;
-  transform: skewY(-25deg); /* diagonal angle */
-  transform-origin: top left;
-  z-index: 1;        /* behind the logo and links */
-  pointer-events: none; /* so links are clickable */
 }
 
 .nav-links {
@@ -40,4 +33,13 @@
 .content {
   margin-top: 90px; /* 60 + 30 */
   padding: 20px;
+}
+
+.now-showing{
+  font-size: 50px;
+}
+
+.nav-logo{
+  height: 70%;
+  width: auto;
 }
