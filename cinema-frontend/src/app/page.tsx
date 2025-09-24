@@ -24,6 +24,7 @@ export default function Home() {
     <div className="flex flex-col font-sans items-center justify-items-center">
       <nav className="topnav">
         <Image src={logo} alt="Site Logo" className="nav-logo" />
+        <h1 className="title">CINEMA</h1>
         <div className = "nav-links">
            <a href="#home">Home</a>
           <a href="#browse">Browse Movies</a>
