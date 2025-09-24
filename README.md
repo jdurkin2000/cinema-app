@@ -34,13 +34,7 @@ Movie: {
 "poster": string,
 "trailer": string,
 "rating": string,
-"showtimes": [Timestamps],
-"released": Timestamp,
+"showtimes": [string],
+"released": string,
 "isUpcoming": boolean
-}
-
-Timestamp format:
-
-{
-"$date": ISO 8601 string
 }
