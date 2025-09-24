@@ -1,168 +1,43 @@
-/* HomePage.css */
-
-.homepage-container {
-  min-height: 100vh;
-  background-color: #f3f4f6;
+.topnav {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  padding: 1.5rem;
-  font-family: sans-serif;
-}
-
-/* Updated Header / Top Bar */
-.header {
+  position: fixed;
+  top: 0;
   width: 100%;
-  max-width: 1200px;
+  height: 60px;
+  background: linear-gradient(to bottom, #313131 50%, #7300ff  50%);;
+  padding: 0 20px;
+  z-index: 1000;
+}
+
+.topnav::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 150%;       /* make it wide enough to cover diagonally */
+  height: 100%;
+  background-color: #313131;
+  transform: skewY(-25deg); /* diagonal angle */
+  transform-origin: top left;
+  z-index: 1;        /* behind the logo and links */
+  pointer-events: none; /* so links are clickable */
+}
+
+.nav-links {
+  margin-left: auto;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background-color: #1f2937; /* dark background */
-  padding: 1rem 2rem;
+  gap: 20px;
+}
+
+.nav-links a {
   color: white;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-  border-radius: 0.5rem;
-}
-
-.header-left,
-.header-right {
-  display: flex;
-  align-items: center;
-}
-
-/* Left side: logo + text */
-.header-left {
-  gap: 0.5rem;
-  border-right: 1px solid rgba(255,255,255,0.3); /* visual split */
-  padding-right: 1rem;
-}
-
-.logo-img {
-  width: 40px;
-  height: 40px;
-}
-
-.logo-text {
-  font-size: 1.75rem;
-  font-weight: bold;
-  color: white;
-}
-
-/* Right side: nav links */
-.header-right .nav-link {
-  margin-left: 1.5rem;
   text-decoration: none;
-  color: white;
-  font-weight: 500;
+  font-size: 20px;
+  padding: 8px 12px;
 }
 
-.header-right .nav-link:hover {
-  text-decoration: underline;
-}
-
-/* Search & Filter */
-.search-filter {
-  width: 100%;
-  max-width: 1200px;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin-top: 1.5rem;
-}
-
-.search-input, .genre-select {
-  padding: 0.5rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.375rem;
-  width: 100%;
-}
-
-@media (min-width: 768px) {
-  .search-filter {
-    flex-direction: row;
-    justify-content: space-between;
-  }
-  .search-input {
-    width: 50%;
-  }
-  .genre-select {
-    width: 25%;
-  }
-}
-
-/* Section Titles */
-.section-title {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #1f2937;
-  margin-bottom: 1rem;
-  width: 100%;
-  max-width: 1200px;
-}
-
-/* Movie Grid */
-.movies-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 2rem;
-  width: 100%;
-  max-width: 1200px;
-}
-
-@media (min-width: 768px) {
-  .movies-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-.movie-card {
-  background-color: #ffffff;
-  border-radius: 1rem;
-  box-shadow: 0 10px 15px rgba(0,0,0,0.1);
-  overflow: hidden;
-}
-
-.movie-poster {
-  width: 100%;
-  height: 12rem;
-  object-fit: cover;
-  border-radius: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.movie-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 0.5rem;
-}
-
-.movie-rating {
-  color: #4b5563;
-  margin-bottom: 0.5rem;
-}
-
-.movie-description {
-  color: #4b5563;
-  margin-bottom: 1rem;
-}
-
-.showtimes {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.trailer {
-  margin-bottom: 1rem;
-}
-
-.footer {
-  width: 100%;
-  max-width: 1200px;
-  text-align: center;
-  color: #6b7280;
-  margin-top: 2rem;
-  padding-bottom: 1rem;
+.content {
+  margin-top: 90px; /* 60 + 30 */
+  padding: 20px;
 }
