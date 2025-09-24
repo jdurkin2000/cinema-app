@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Image from 'next/image'
 import './page.css'
 import logo from './assets/logo.png'
-import Image from "next/image";
 import Movie from "@/models/movie";
 
 export default function Home() {
