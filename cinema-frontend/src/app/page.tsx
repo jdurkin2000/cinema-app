@@ -32,7 +32,7 @@ export default function Home() {
   });
 
   return (
-    <div className="flex flex-col font-sans items-center justify-items-center">
+    <div>
       <nav className="topnav">
         <Image src={logo} alt="Site Logo" className="nav-logo" />
         <h1 className="title">CINEMA</h1>
