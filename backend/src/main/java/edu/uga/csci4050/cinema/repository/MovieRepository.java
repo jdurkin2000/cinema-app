@@ -1,18 +1,15 @@
 package edu.uga.csci4050.cinema.repository;
 
 import edu.uga.csci4050.cinema.model.MovieItem;
+import edu.uga.csci4050.cinema.repository.custom.CustomMovieRepository;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
-public interface MovieRepository extends MongoRepository<MovieItem, String> {
-    public Optional<MovieItem> findFirstByTitle(String title);
+public interface MovieRepository extends MongoRepository<MovieItem, String>, CustomMovieRepository {
     public List<MovieItem> findByTitle(String title);
 
-    public List<MovieItem> findByGenre(String genre);
+    public List<MovieItem> findByGenresContaining(List<String> genres);
 
-    public Optional<MovieItem> findFirstByShowtimes(LocalDateTime showtime);
-    public List<MovieItem> findByShowtimes(LocalDateTime showtime);
+    public List<MovieItem> findByTitleAndGenres(String title, List<String> genres);
 }

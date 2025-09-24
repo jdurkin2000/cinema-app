@@ -1,11 +1,11 @@
 package edu.uga.csci4050.cinema.util;
 
+import edu.uga.csci4050.cinema.model.MovieResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-import java.util.Optional;
 
 public class HttpUtils {
     public static <T> ResponseEntity<List<T>> buildResponseEntity(List<T> list, String notFoundMsg)
@@ -23,8 +23,11 @@ public class HttpUtils {
         return ResponseEntity.ok(item);
     }
 
-    // public static <T> ResponseEntity<T> buildResponseEntity(Optional<T> opt, String notFoundMsg)
-    //         throws ResponseStatusException {
-    //     return opt.map(item -> buildResponseEntity(item, notFoundMsg));
-    // }
+    public static ResponseEntity<MovieResponse> buildResponseEntity(MovieResponse item, String notFoundMsg)
+            throws ResponseStatusException {
+        if (item == null || item.isEmpty())
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, notFoundMsg);
+
+        return ResponseEntity.ok(item);
+    }
 }

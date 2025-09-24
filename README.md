@@ -7,16 +7,40 @@ a 404 not found response to indicate the query did not find any objects
 Fetch all movies available in database
 
 /api/movies/{id}
-Fetch movie with unique id
+Fetch movie with unique mongodb id
 
 /api/movies?title={title}
 Fetch all movies matching {title}
+always returns a list
 
 /api/movies?genre={genre}
 Fetch all movies with genre {genre}
+always returns a list
 
-/api/movies?showtime={showtime}
-Fetch all movies with showtime {showtime}.
-The backend internally uses a Java LocalDateTime object to
-parse the string into the same object, but further tweaks
-might need to be made to make searching more flexible. 
+title and genres can be combined in the same url
+also multiple genres can be queried by comma separating them
+within the endpoint
+
+Movie JSON structure:
+
+Movie: {
+"title": string,
+"genres": [strings],
+"cast": [strings],
+"director": string,
+"producer": string,
+"synopsis": string,
+"reviews": [strings],
+"poster": string,
+"trailer": string,
+"rating": string,
+"showtimes": [Timestamps],
+"released": Timestamp,
+"isUpcoming": boolean
+}
+
+Timestamp format:
+
+{
+"$date": ISO 8601 string
+}
