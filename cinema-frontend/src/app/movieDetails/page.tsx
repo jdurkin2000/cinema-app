@@ -6,7 +6,7 @@ import Movie from "@/models/movie";
 
 export default function Home() {
   const loadingMovie: Movie = {
-    _id: -1,
+    _id: "-1",
     title: "Loading movie data..",
     poster: "/poster_loading.png",
     synopsis: "Skibidi Toilet Dubai Chocolate Labubu",
