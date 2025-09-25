@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
+import Image from 'next/image'
+import './page.css'
+import logo from './assets/logo.png'
 import Movie from "@/models/movie";
 
 export default function Home() {
@@ -30,7 +32,39 @@ export default function Home() {
   });
 
   return (
-    <div className="flex flex-col font-sans items-center justify-items-center">
+    <div>
+      <nav className="topnav">
+        <Image src={logo} alt="Site Logo" className="nav-logo" />
+        <h1 className="title">CINEMA</h1>
+        <div className = "nav-links">
+           <a href="#home">Home</a>
+          <a href="#browse">Browse Movies</a>
+          <a href="#about">About</a>
+        </div>
+      </nav>
+
+      <div className="content">
+        <p className="now-showing">Now Showing</p>
+        <pre className="text-xl">{movie.trailer}</pre>
+        
+        <p>{movie.synopsis}</p>
+        <Image
+          src={movie.poster}
+          alt="Movie Poster"
+          width={200}
+          height={250}
+        />
+        <div className="aspect-w-16 aspect-h-9">
+        <iframe
+          width="560"
+          height="315"
+          src={movie.trailer}
+          title="YouTube video player"
+          allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        />
+      </div>
+      </div>
       <pre className="text-xl">{movie.title}</pre>
       <p>Rated: {movie.rating}</p>
       <p>{movie.synopsis}</p>

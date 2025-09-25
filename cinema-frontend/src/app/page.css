@@ -1,0 +1,50 @@
+html, body {
+  height: 100%;          /* ensure they stretch the full viewport */
+  margin: 0;             /* remove default margins */
+  background-color: #313131; /* choose any color */
+}
+
+
+.topnav {
+  display: flex;
+  align-items: center;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  height: 8vh;
+  background: linear-gradient(to bottom, #5400bb  50%, #7300ff  50%);;
+  padding: 0 20px;
+  z-index: 1000;
+}
+
+.nav-links {
+  margin-left: auto;
+  display: flex;
+  gap: 20px;
+}
+
+.nav-links a {
+  color: white;
+  text-decoration: none;
+  font-size: 3vh;
+  padding: 8px 12px;
+}
+
+.content {
+  margin-top: 90px; /* 60 + 30 */
+  padding: 20px;
+}
+
+.now-showing{
+  font-size: 3.50vh;
+}
+
+.nav-logo{
+  height: 70%;
+  width: auto;
+}
+
+.title{
+  font-size: 3vh;
+  font-style: bold;
+}
