@@ -1,5 +1,5 @@
 export default interface Movie {
-  _id: string;
+  id: string;
   title: string;
   genres: string[];
   cast: string[];
@@ -12,5 +12,5 @@ export default interface Movie {
   rating: string;
   showtimes: string[];
   released: string;
-  isUpcoming: boolean;
-};
+  upcoming: boolean;
+}

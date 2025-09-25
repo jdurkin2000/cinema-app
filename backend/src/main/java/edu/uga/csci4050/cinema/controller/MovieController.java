@@ -1,7 +1,6 @@
 package edu.uga.csci4050.cinema.controller;
 
 import edu.uga.csci4050.cinema.model.MovieItem;
-import edu.uga.csci4050.cinema.model.MovieResponse;
 import edu.uga.csci4050.cinema.util.HttpUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

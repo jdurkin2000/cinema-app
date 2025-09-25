@@ -1,13 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
-import Movie from "@/models/movie";
+import { useMovies } from "@/libs/cinemaApi";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 
 export default function Home() {
-  const [movie, setMovie] = useState<Movie | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const params = useSearchParams();
+  const movieId = params.get("id");
+
+  const {
+    movies,
+    loading: isLoading,
+    error,
+  } = useMovies({ id: movieId || "0" });
   const [selectedShowtime, setSelectedShowtime] = useState<string | null>(null);
   const [isShowtimeOpen, setIsShowtimeOpen] = useState(false);
 
@@ -16,62 +23,24 @@ export default function Home() {
     setIsShowtimeOpen(true);
   };
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8080";
-  const query = useMemo(
-    () => new URLSearchParams({ title: "slayer" }).toString(),
-    []
-  );
-
-  useEffect(() => {
-    const ac = new AbortController();
-
-    async function run() {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const res = await fetch(`${API_BASE}/api/movies?${query}`, {
-          signal: ac.signal,
-        });
-        if (!res.ok) throw new Error(`Request failed: ${res.status}`);
-        // make JSON typed to avoid 'unknown'
-        const data = (await res.json()) as Movie[];
-        setMovie(data?.[0] ?? null);
-      } catch (err: any) {
-        if (err?.name !== "AbortError") {
-          setError(err?.message ?? "Something went wrong fetching the movie.");
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    run();
-    return () => ac.abort();
-  }, [API_BASE, query]);
-
-  // --- UI helpers (typed arrays to avoid 'unknown') ---
-  const posterSrc = movie?.poster || "/poster_placeholder.png";
-  const title = movie?.title ?? "Untitled";
-  const rating = movie?.rating ?? "NR";
-  const synopsis = movie?.synopsis ?? "No synopsis available.";
-  const genres: string[] = movie?.genres ?? [];
-  const showtimes: string[] = (movie?.showtimes ?? []).filter(Boolean) as string[];
-  const cast: string[] = movie?.cast ?? [];
-  const director = movie?.director ?? "Unknown";
-  const producer = movie?.producer ?? "Unknown";
-  const trailer = movie?.trailer ?? "";
+  const movie = movies[0];
 
   return (
     <main className="min-h-dvh bg-background text-foreground">
       <div className="mx-auto max-w-5xl p-6">
         {/* Header */}
         <header className="mb-6">
-          <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">{title}</h1>
+          <h1 className="flex justify-between text-3xl md:text-4xl font-semibold tracking-tight">
+            {movie.title}
+            <Link href='/' className="rounded-md border px-3 py-2 text-2xl hover:shadow-sm shadow-gray-50 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2">
+              Return to Homepage
+            </Link>
+          </h1>
           {!isLoading && (
             <p className="mt-1 text-sm opacity-80">
               Rating:{" "}
               <span className="inline-block rounded-full border px-2 py-0.5 text-xs align-middle">
-                {rating}
+                {movie.rating}
               </span>
             </p>
           )}
@@ -87,8 +56,8 @@ export default function Home() {
                 <div className="h-[420px] w-full animate-pulse" />
               ) : (
                 <Image
-                  src={posterSrc}
-                  alt={`${title} poster`}
+                  src={movie.poster}
+                  alt={`${movie.title} poster`}
                   width={800}
                   height={1200}
                   className="h-auto w-full object-cover"
@@ -99,20 +68,21 @@ export default function Home() {
 
             {/* Genres — split branches so map() always sees string[] */}
             <div className="flex flex-wrap gap-2">
-              {isLoading ? (
-                Array.from({ length: 4 }).map((_, i) => (
-                  <span
-                    key={i}
-                    className="animate-pulse w-16 h-6 rounded-full border px-3 py-1 text-xs"
-                  />
-                ))
-              ) : (
-                genres.map((g: string, i) => (
-                  <span key={i} className="rounded-full border px-3 py-1 text-xs">
-                    {g}
-                  </span>
-                ))
-              )}
+              {isLoading
+                ? Array.from({ length: 4 }).map((_, i) => (
+                    <span
+                      key={i}
+                      className="animate-pulse w-16 h-6 rounded-full border px-3 py-1 text-xs"
+                    />
+                  ))
+                : movie.genres.map((g: string, i) => (
+                    <span
+                      key={i}
+                      className="rounded-full border px-3 py-1 text-xs"
+                    >
+                      {g}
+                    </span>
+                  ))}
             </div>
 
             {/* Cast/Crew */}
@@ -126,18 +96,21 @@ export default function Home() {
                 <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                   <div>
                     <dt className="opacity-70">Director</dt>
-                    <dd className="font-medium">{director}</dd>
+                    <dd className="font-medium">{movie.director}</dd>
                   </div>
                   <div>
                     <dt className="opacity-70">Producer</dt>
-                    <dd className="font-medium">{producer}</dd>
+                    <dd className="font-medium">{movie.producer}</dd>
                   </div>
-                  {!!cast.length && (
+                  {!!movie.cast.length && (
                     <div className="col-span-2">
                       <dt className="opacity-70">Cast</dt>
                       <dd className="mt-1 flex flex-wrap gap-2">
-                        {cast.map((name: string, i) => (
-                          <span key={i} className="rounded-md border px-2 py-0.5 text-xs">
+                        {movie.cast.map((name: string, i) => (
+                          <span
+                            key={i}
+                            className="rounded-md border px-2 py-0.5 text-xs"
+                          >
                             {name}
                           </span>
                         ))}
@@ -161,7 +134,7 @@ export default function Home() {
                   <div className="h-4 w-10/12 animate-pulse" />
                 </div>
               ) : (
-                <p className="mt-3 leading-relaxed">{synopsis}</p>
+                <p className="mt-3 leading-relaxed">{movie.synopsis}</p>
               )}
             </div>
 
@@ -170,12 +143,12 @@ export default function Home() {
               <h2 className="mb-3 text-lg font-semibold">Trailer</h2>
               {isLoading ? (
                 <div className="aspect-[16/9] w-full animate-pulse rounded-lg" />
-              ) : trailer ? (
+              ) : movie.trailer ? (
                 <div className="aspect-[16/9] w-full overflow-hidden rounded-lg">
                   <iframe
                     className="h-full w-full"
-                    src={trailer}
-                    title={`${title} trailer`}
+                    src={movie.trailer}
+                    title={`${movie.title} trailer`}
                     allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
                   />
@@ -191,12 +164,15 @@ export default function Home() {
               {isLoading ? (
                 <div className="mt-3 flex flex-wrap gap-2">
                   {Array.from({ length: 6 }).map((_, i) => (
-                    <span key={i} className="h-8 w-20 animate-pulse rounded-md border" />
+                    <span
+                      key={i}
+                      className="h-8 w-20 animate-pulse rounded-md border"
+                    />
                   ))}
                 </div>
-              ) : showtimes.length ? (
+              ) : movie.showtimes.length ? (
                 <ul className="mt-3 flex flex-wrap gap-2">
-                  {showtimes.map((value: string, index: number) => (
+                  {movie.showtimes.map((value: string, index: number) => (
                     <li key={index}>
                       <button
                         type="button"
@@ -222,9 +198,13 @@ export default function Home() {
                 className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4"
               >
                 <div className="w-full max-w-md rounded-2xl border bg-background p-6 shadow-lg">
-                  <h3 className="text-lg font-semibold">Confirm your showtime</h3>
+                  <h3 className="text-lg font-semibold">
+                    Confirm your showtime
+                  </h3>
                   <p className="mt-2 text-sm opacity-80">
-                    {selectedShowtime ? `You picked ${selectedShowtime}.` : "Pick a time."}
+                    {selectedShowtime
+                      ? `You picked ${selectedShowtime}.`
+                      : "Pick a time."}
                   </p>
                   <div className="mt-4 flex items-center gap-3">
                     <button
@@ -234,17 +214,16 @@ export default function Home() {
                     >
                       Cancel
                     </button>
-                    <button
+                    <Link
                       type="button"
                       className="rounded-md border px-4 py-2 text-sm hover:shadow-sm"
-                      onClick={() => {
-                        setIsShowtimeOpen(false);
-                        // TODO: navigate to /booking or perform an action
-                        alert(`Proceeding with showtime: ${selectedShowtime}`);
+                      href={{
+                        pathname: "/movieBooking",
+                        query: { id: movie.id, showtime: selectedShowtime },
                       }}
                     >
                       Continue
-                    </button>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -253,8 +232,10 @@ export default function Home() {
             {/* Error state */}
             {error && (
               <div className="rounded-2xl border border-red-500/40 bg-red-500/5 p-4 text-sm">
-                <p className="font-medium text-red-600">Failed to load movie.</p>
-                <p className="opacity-80">{error}</p>
+                <p className="font-medium text-red-600">
+                  Failed to load movie.
+                </p>
+                <p className="opacity-80">{error.message}</p>
               </div>
             )}
           </div>

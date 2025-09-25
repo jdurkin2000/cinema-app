@@ -8,6 +8,7 @@ Fetch all movies available in database
 
 /api/movies/{id}
 Fetch movie with unique mongodb id
+always returns a list with one movie
 
 /api/movies?title={title}
 Fetch all movies matching {title}
@@ -24,6 +25,7 @@ within the endpoint
 Movie JSON structure:
 
 Movie: {
+"id": string,
 "title": string,
 "genres": [strings],
 "cast": [strings],
@@ -36,5 +38,5 @@ Movie: {
 "rating": string,
 "showtimes": [string],
 "released": string,
-"isUpcoming": boolean
+"upcoming": boolean
 }

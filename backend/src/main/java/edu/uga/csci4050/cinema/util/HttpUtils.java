@@ -1,6 +1,5 @@
 package edu.uga.csci4050.cinema.util;
 
-import edu.uga.csci4050.cinema.model.MovieResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.server.ResponseStatusException;
@@ -18,14 +17,6 @@ public class HttpUtils {
 
     public static <T> ResponseEntity<T> buildResponseEntity(T item, String notFoundMsg) throws ResponseStatusException {
         if (item == null)
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, notFoundMsg);
-
-        return ResponseEntity.ok(item);
-    }
-
-    public static ResponseEntity<MovieResponse> buildResponseEntity(MovieResponse item, String notFoundMsg)
-            throws ResponseStatusException {
-        if (item == null || item.isEmpty())
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, notFoundMsg);
 
         return ResponseEntity.ok(item);

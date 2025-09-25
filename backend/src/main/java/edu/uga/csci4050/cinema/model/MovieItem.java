@@ -55,6 +55,10 @@ public class MovieItem {
         this.isUpcoming = isUpcoming;
     }
 
+    public String getId() {
+        return id;
+    }
+
     public String getTitle() {
         return title;
     }

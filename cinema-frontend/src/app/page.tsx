@@ -1,43 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Image from 'next/image'
-import './page.css'
-import logo from './assets/logo.png'
+import Image from "next/image";
+import "./page.css";
+import logo from "@/assets/logo.png";
+import { useMovies } from "@/libs/cinemaApi";
 import Movie from "@/models/movie";
+import { ReactElement } from "react";
+import Link from "next/link";
 
 export default function Home() {
-  const loadingMovie: Movie = {
-    _id: "-1",
-    title: "Loading movie data..",
-    poster: "/poster_loading.png",
-    synopsis: "Skibidi Toilet Dubai Chocolate Labubu",
-    trailer: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-    genres: ["Weeb", "Horror"],
-    cast: ["Spongebob", "Patrick"],
-    director: "John Cena",
-    producer: "Danny Devito",
-    reviews: ["Yes", "Cool"],
-    rating: "NR",
-    showtimes: [""],
-    released: "2025-11-11",
-    isUpcoming: false,
-  };
-  const [movie, setMovie] = useState(loadingMovie);
-  useEffect(() => {
-    fetch("http://localhost:8080/api/movies?title=slayer")
-      .then((res) => res.json())
-      .then((data) => setMovie(data[0]))
-      .catch((err) => console.error(err));
-  });
+  const { movies, loading, error } = useMovies();
+
+  if (loading) return <p>Loading movies...</p>;
+  if (error) return <p>Error: {error.message}</p>;
 
   return (
     <div>
       <nav className="topnav">
         <Image src={logo} alt="Site Logo" className="nav-logo" />
         <h1 className="title">CINEMA</h1>
-        <div className = "nav-links">
-           <a href="#home">Home</a>
+        <div className="nav-links">
+          <a href="#home">Home</a>
           <a href="#browse">Browse Movies</a>
           <a href="#about">About</a>
         </div>
@@ -45,46 +28,33 @@ export default function Home() {
 
       <div className="content">
         <p className="now-showing">Now Showing</p>
-        <pre className="text-xl">{movie.trailer}</pre>
-        
-        <p>{movie.synopsis}</p>
-        <Image
-          src={movie.poster}
-          alt="Movie Poster"
-          width={200}
-          height={250}
-        />
-        <div className="aspect-w-16 aspect-h-9">
-        <iframe
-          width="560"
-          height="315"
-          src={movie.trailer}
-          title="YouTube video player"
-          allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-        />
+        {getMovieList(movies.filter((movie) => !movie.upcoming))}
       </div>
-      </div>
-      <pre className="text-xl">{movie.title}</pre>
-      <p>Rated: {movie.rating}</p>
-      <p>{movie.synopsis}</p>
-      <Image src={movie.poster} alt="Movie Poster" width={200} height={250} />
-      <div className="aspect-w-16 aspect-h-9">
-        <iframe
-          width="560"
-          height="315"
-          src={movie.trailer}
-          title="YouTube video player"
-          allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-        />
-      </div>
-      <p>Available Showtimes:</p>
-      <ul>
-        {movie.showtimes.map((value, index) => (
-          <li key={index}>{value}</li>
-        ))}
-      </ul>
+
+      <div className="now-showing">Upcoming</div>
+      {getMovieList(movies.filter((movie) => movie.upcoming))}
     </div>
+  );
+}
+
+function getMovieList(movies: Movie[]): ReactElement {
+  return (
+    <ol className="flex space-x-5 space-y-5 flex-wrap">
+      {movies.map((movie) => {
+        return (
+          <li key={movie.id}>
+            <Link href={{ pathname: "/movieDetails", query: { id: movie.id } }}>
+              <Image
+                src={movie.poster}
+                alt={`Movie poster of ${movie.title}`}
+                width={200}
+                height={250}
+                className="rounded-lg transform hover:scale-110 transition duration-300 active:scale-95"
+              />
+            </Link>
+          </li>
+        );
+      })}
+    </ol>
   );
 }
