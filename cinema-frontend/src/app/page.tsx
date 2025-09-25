@@ -29,10 +29,9 @@ export default function Home() {
       <div className="content">
         <p className="now-showing">Now Showing</p>
         {getMovieList(movies.filter((movie) => !movie.upcoming))}
+        <div className="now-showing">Upcoming</div>
+        {getMovieList(movies.filter((movie) => movie.upcoming))}
       </div>
-
-      <div className="now-showing">Upcoming</div>
-      {getMovieList(movies.filter((movie) => movie.upcoming))}
     </div>
   );
 }
