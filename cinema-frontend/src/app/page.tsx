@@ -3,16 +3,45 @@
 import Image from "next/image";
 import "./page.css";
 import logo from "@/assets/logo.png";
-import { useMovies } from "@/libs/cinemaApi";
+import { MovieQueryParams, useMovies } from "@/libs/cinemaApi";
 import Movie from "@/models/movie";
-import { ReactElement } from "react";
+import { FormEvent, ReactElement, useState } from "react";
 import Link from "next/link";
 
 export default function Home() {
-  const { movies, loading, error } = useMovies();
+  const [filterParams, setFilterParams] = useState<MovieQueryParams>({});
+  const { movies, loading, error } = useMovies(filterParams);
 
   if (loading) return <p>Loading movies...</p>;
   if (error) return <p>Error: {error.message}</p>;
+
+  const handleMovieSearch = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const titleValue = formData.get("titleInput") as string;
+    const genresValue = formData.get("genreInput") as string;
+    // Splits multiple genres into array
+    const genres: string[] | null = genresValue?.trim()
+      ? genresValue.split(/[^a-zA-Z0-9]+/)
+      : null;
+
+    if (!titleValue?.trim() && !genres) return;
+
+    setFilterParams(
+      (prev) =>
+        (prev = {
+          ...prev,
+          title: titleValue.trim() ?? undefined,
+          genres: genres ?? undefined,
+        })
+    );
+  };
+
+  const displayFilters = filterParams.genres || filterParams.title;
+  let filteringByString = "Filtering Movies by:";
+  if (filterParams.title) filteringByString += " Title - " + filterParams.title;
+  if (filterParams.genres?.length)
+    filteringByString += " Genres - " + filterParams.genres?.toString();
 
   return (
     <div>
@@ -27,6 +56,33 @@ export default function Home() {
       </nav>
 
       <div className="content">
+        <form className="flex space-x-3" onSubmit={handleMovieSearch}>
+          <input
+            className="border-1 rounded-md px-1"
+            type="text"
+            placeholder="Enter a movie"
+            name="titleInput"
+          />
+          <input
+            className="border-1 rounded-md px-1"
+            type="text"
+            placeholder="Enter any amount of genres"
+            name="genreInput"
+          />
+          <button className="bg-purple-600 rounded-2xl px-4 py-1 cursor-pointer" type="submit">
+            Submit
+          </button>
+          {displayFilters && (<div className="flex items-center relative font-bold px-2">
+            <span className="relative">{filteringByString}</span>
+            <button
+              className="absolute inset-0 opacity-0 hover:bg-red-500/90 hover:opacity-100 rounded-2xl transition-opacity duration-300 cursor-pointer"
+              onClick={() => setFilterParams({})}
+            >
+              Remove Filters
+              </button>
+          </div>)}
+          </form>
+
         <p className="now-showing">Now Showing</p>
         {getMovieList(movies.filter((movie) => !movie.upcoming))}
         <div className="now-showing">Upcoming</div>

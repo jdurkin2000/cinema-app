@@ -4,7 +4,7 @@ import Movie from "@/models/movie";
 
 const baseApiString = "http://localhost:8080/api/movies";
 
-type MovieQueryParams = {
+export type MovieQueryParams = {
   id?: string;
   title?: string;
   genres?: string[];
@@ -12,7 +12,7 @@ type MovieQueryParams = {
 
 type ErrorInfo = {
   status: number | null;
-  message: string | null;
+  message: string;
 };
 
 function getErrorMessage(status?: number): string {
