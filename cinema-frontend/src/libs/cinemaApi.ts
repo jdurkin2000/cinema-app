@@ -4,6 +4,13 @@ import Movie from "@/models/movie";
 
 const baseApiString = "http://localhost:8080/api/movies";
 
+/**
+ * Represents the query parameters used to filter movies in the cinema API.
+ *
+ * @property id - Optional unique identifier of the movie.
+ * @property title - Optional title of the movie to search for.
+ * @property genres - Optional array of genres to filter movies by.
+ */
 export type MovieQueryParams = {
   id?: string;
   title?: string;
@@ -32,6 +39,22 @@ function getErrorMessage(status?: number): string {
   }
 }
 
+// Regex to detect ISO 8601 UTC timestamps
+const isoDateRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z)?$/;
+
+// Reviver function that converts ISO strings to Date
+function dateReviver(key: string, value: unknown) {
+  if (typeof value === "string" && isoDateRegex.test(value)) {
+    return new Date(value);
+  }
+  if (Array.isArray(value)) {
+    return value.map((v) =>
+      typeof v === "string" && isoDateRegex.test(v) ? new Date(v) : v
+    );
+  }
+  return value;
+}
+
 /**
  * Custom React hook for fetching movies from the API.
  *
@@ -58,7 +81,7 @@ function getErrorMessage(status?: number): string {
  * );
  */
 export function useMovies(params: MovieQueryParams = {}) {
-  const loadingMovie = [
+  const loadingMovie: Movie[] = [
     {
       id: "-1",
       title: "Loading movie data..",
@@ -71,8 +94,8 @@ export function useMovies(params: MovieQueryParams = {}) {
       producer: "Danny Devito",
       reviews: ["Yes", "Cool"],
       rating: "NR",
-      showtimes: [""],
-      released: "2025-11-11",
+      showtimes: [],
+      released: new Date(),
       upcoming: false,
     },
   ];
@@ -88,7 +111,9 @@ export function useMovies(params: MovieQueryParams = {}) {
     setError(null);
 
     axios
-      .get<Movie | Movie[]>(url)
+      .get<Movie | Movie[]>(url, {
+        transformResponse: [(data) => JSON.parse(data, dateReviver)],
+      })
       .then((res) => {
         // If res.data is an array, use it; if single movie, wrap in array
         // console.log(res.data);
@@ -105,6 +130,21 @@ export function useMovies(params: MovieQueryParams = {}) {
   }, [params.genres, params.id, params.title]);
 
   return { movies, loading, error };
+}
+
+/**
+ * Formats a JavaScript `Date` object into a localized string using US English conventions.
+ *
+ * The output includes both the date and time in short format.
+ *
+ * @param date - The `Date` object to format.
+ * @returns A string representing the formatted date and time.
+ */
+export function formatDateTime(date: Date): string {
+  return date.toLocaleString("en-US", {
+    dateStyle: "short",
+    timeStyle: "short",
+  });
 }
 
 function buildUrlString(params: MovieQueryParams): string {

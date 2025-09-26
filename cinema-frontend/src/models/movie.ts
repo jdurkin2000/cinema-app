@@ -10,7 +10,7 @@ export default interface Movie {
   poster: string;
   trailer: string;
   rating: string;
-  showtimes: string[];
-  released: string;
+  showtimes: Date[];
+  released: Date;
   upcoming: boolean;
 }

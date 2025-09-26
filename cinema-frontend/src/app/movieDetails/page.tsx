@@ -15,10 +15,10 @@ export default function Home() {
     loading: isLoading,
     error,
   } = useMovies({ id: movieId || "0" });
-  const [selectedShowtime, setSelectedShowtime] = useState<string | null>(null);
+  const [selectedShowtime, setSelectedShowtime] = useState<Date | null>(null);
   const [isShowtimeOpen, setIsShowtimeOpen] = useState(false);
 
-  const onPickShowtime = (time: string) => {
+  const onPickShowtime = (time: Date) => {
     setSelectedShowtime(time);
     setIsShowtimeOpen(true);
   };
@@ -171,16 +171,16 @@ export default function Home() {
                   ))}
                 </div>
               ) : movie.showtimes.length ? (
-                <ul className="mt-3 flex flex-wrap gap-2">
-                  {movie.showtimes.map((value: string, index: number) => (
+                <ul className="mt-3 columns-2 gap-2">
+                  {movie.showtimes.map((value: Date, index: number) => (
                     <li key={index}>
                       <button
                         type="button"
                         onClick={() => onPickShowtime(value)}
-                        className="rounded-md border px-3 py-2 text-sm hover:shadow-sm active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-                        aria-label={`Choose showtime ${value}`}
+                        className="mb-2 w-full text-left rounded-md border px-3 py-2 text-sm hover:shadow-sm shadow-white active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 cursor-pointer"
+                        aria-label={`Choose showtime ${value.toLocaleString()}`}
                       >
-                        {value}
+                        {value.toLocaleString()}
                       </button>
                     </li>
                   ))}
@@ -203,7 +203,7 @@ export default function Home() {
                   </h3>
                   <p className="mt-2 text-sm opacity-80">
                     {selectedShowtime
-                      ? `You picked ${selectedShowtime}.`
+                      ? `You picked ${selectedShowtime.toLocaleString()}.`
                       : "Pick a time."}
                   </p>
                   <div className="mt-4 flex items-center gap-3">
@@ -219,7 +219,7 @@ export default function Home() {
                       className="rounded-md border px-4 py-2 text-sm hover:shadow-sm"
                       href={{
                         pathname: "/movieBooking",
-                        query: { id: movie.id, showtime: selectedShowtime },
+                        query: { id: movie.id, showtime: selectedShowtime?.toISOString() },
                       }}
                     >
                       Continue

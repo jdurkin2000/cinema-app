@@ -1,11 +1,10 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useMovies } from "@/libs/cinemaApi";
+import { formatDateTime, useMovies } from "@/libs/cinemaApi";
 import Link from "next/link";
 import React, { useState } from "react";
 import Image from "next/image";
-
 
 // Define the props for a single seat
 interface SeatProps {
@@ -32,11 +31,11 @@ const Seat: React.FC<SeatProps> = ({ seatNumber, isSelected, onSelect }) => {
 
 // Define the seat layout for the cinema
 const rows = [
-  ['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8'],
-  ['B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8'],
-  ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8'],
-  ['D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8'],
-  ['E1', 'E2', 'E3', 'E4', 'E5', 'E6', 'E7', 'E8'],
+  ["A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8"],
+  ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8"],
+  ["C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8"],
+  ["D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8"],
+  ["E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8"],
 ];
 
 //Main component
@@ -44,7 +43,7 @@ const rows = [
 export default function Home() {
   const params = useSearchParams();
   const movieId = params.get("id");
-  const showtime = params.get("showtime");
+  const showtime = params.get("showtime") || "No showtime found";
   const receivedParams = movieId && showtime;
 
   const { movies, loading, error } = useMovies({ id: movieId || "0" });
@@ -67,7 +66,6 @@ export default function Home() {
   const movie = movies[0];
 
   return (
-
     <div className="flex flex-col font-sans items-center justify-center space-y-6 min-h-screen bg-black text-white p-4">
       <h1 className="text-3xl font-bold">{movie.title}</h1>
       <Image
@@ -77,26 +75,30 @@ export default function Home() {
         height={250}
         className="rounded-lg transform hover:scale-110 transition duration-300 active:scale-95"
       />
-      <p className="text-lg">Showtime: {showtime}</p>
-
+      <p className="text-lg">Showtime: {formatDateTime(new Date(showtime))}</p>
 
       <div className="flex flex-col items-center space-y-4">
-
-
-        <div className="bg-white text-black w-72 md:w-125 h-8 flex items-center justify-center font-bold rounded-sm shadow-lg shadow-white/30"
-          style={{ transform: "perspective(500px) rotateX(-30deg)" }}>
+        <div
+          className="bg-white text-black w-72 md:w-125 h-8 flex items-center justify-center font-bold rounded-sm shadow-lg shadow-white/30"
+          style={{ transform: "perspective(500px) rotateX(-30deg)" }}
+        >
           Movie Screen
         </div>
 
-
         <div className="flex flex-col gap-3">
-
           {rows.map((row, rowIndex) => (
             <div key={rowIndex} className="flex items-center gap-3">
-              <span className="w-4 text-center font-semibold">{String.fromCharCode(65 + rowIndex)}</span>
+              <span className="w-4 text-center font-semibold">
+                {String.fromCharCode(65 + rowIndex)}
+              </span>
 
               {row.map((seatNumber, seatIndex) => (
-                <div key={seatNumber} className={`${(seatIndex === 1 || seatIndex === 5) ? 'mr-4' : ''}`}>
+                <div
+                  key={seatNumber}
+                  className={`${
+                    seatIndex === 1 || seatIndex === 5 ? "mr-4" : ""
+                  }`}
+                >
                   <Seat
                     seatNumber={seatNumber}
                     isSelected={selectedSeats.includes(seatNumber)}
