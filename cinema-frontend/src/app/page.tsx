@@ -10,10 +10,10 @@ import Link from "next/link";
 
 export default function Home() {
   const [filterParams, setFilterParams] = useState<MovieQueryParams>({});
-  const { movies, loading, error } = useMovies(filterParams);
+  const { movies, status } = useMovies(filterParams);
+  const currentState = status.currentState;
 
-  if (loading) return <p>Loading movies...</p>;
-  if (error) return <p>Error: {error.message}</p>;
+  if (currentState === "Error") alert(status.message);
 
   const handleMovieSearch = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -69,24 +69,35 @@ export default function Home() {
             placeholder="Enter any amount of genres"
             name="genreInput"
           />
-          <button className="bg-purple-600 rounded-2xl px-4 py-1 cursor-pointer" type="submit">
+          <button
+            className="bg-purple-600 rounded-2xl px-4 py-1 cursor-pointer"
+            type="submit"
+          >
             Submit
           </button>
-          {displayFilters && (<div className="flex items-center relative font-bold px-2">
-            <span className="relative">{filteringByString}</span>
-            <button
-              className="absolute inset-0 opacity-0 hover:bg-red-500/90 hover:opacity-100 rounded-2xl transition-opacity duration-300 cursor-pointer"
-              onClick={() => setFilterParams({})}
-            >
-              Remove Filters
+          {displayFilters && (
+            <div className="flex items-center relative font-bold px-2">
+              <span className="relative">{filteringByString}</span>
+              <button
+                className="absolute inset-0 opacity-0 hover:bg-red-500/90 hover:opacity-100 rounded-2xl transition-opacity duration-300 cursor-pointer"
+                onClick={() => setFilterParams({})}
+              >
+                Remove Filters
               </button>
-          </div>)}
-          </form>
+            </div>
+          )}
+        </form>
 
-        <p className="now-showing">Now Showing</p>
-        {getMovieList(movies.filter((movie) => !movie.upcoming))}
-        <div className="now-showing">Upcoming</div>
-        {getMovieList(movies.filter((movie) => movie.upcoming))}
+        {currentState === "Success" ? (
+          <>
+            <p className="now-showing">Now Showing</p>
+            {getMovieList(movies.filter((movie) => !movie.upcoming))}
+            <div className="now-showing">Upcoming</div>
+            {getMovieList(movies.filter((movie) => movie.upcoming))}
+          </>
+        ) : (
+          <p className="now-showing text-red-500">{status.message}</p>
+        )}
       </div>
     </div>
   );

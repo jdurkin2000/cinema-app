@@ -10,11 +10,7 @@ export default function Home() {
   const params = useSearchParams();
   const movieId = params.get("id");
 
-  const {
-    movies,
-    loading: isLoading,
-    error,
-  } = useMovies({ id: movieId || "0" });
+  const { movies, status } = useMovies({ id: movieId || "0" });
   const [selectedShowtime, setSelectedShowtime] = useState<Date | null>(null);
   const [isShowtimeOpen, setIsShowtimeOpen] = useState(false);
 
@@ -24,6 +20,7 @@ export default function Home() {
   };
 
   const movie = movies[0];
+  const isLoading = status.currentState === "Loading";
 
   return (
     <main className="min-h-dvh bg-background text-foreground">
@@ -230,12 +227,12 @@ export default function Home() {
             )}
 
             {/* Error state */}
-            {error && (
+            {status.currentState === "Error" && (
               <div className="rounded-2xl border border-red-500/40 bg-red-500/5 p-4 text-sm">
                 <p className="font-medium text-red-600">
                   Failed to load movie.
                 </p>
-                <p className="opacity-80">{error.message}</p>
+                <p className="opacity-80">{status.message}</p>
               </div>
             )}
           </div>
