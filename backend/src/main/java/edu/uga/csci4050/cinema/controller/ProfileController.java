@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import edu.uga.csci4050.cinema.controller.dto.ProfileDtos;
 
 import java.util.Map;
 import java.util.Optional;
