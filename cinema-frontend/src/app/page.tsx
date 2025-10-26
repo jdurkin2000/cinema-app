@@ -52,6 +52,7 @@ export default function Home() {
           <a href="#home">Home</a>
           <a href="#browse">Browse Movies</a>
           <a href="#about">About</a>
+          <Link href={"/login"}>Login</Link>
         </div>
       </nav>
 
