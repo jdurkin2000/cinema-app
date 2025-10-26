@@ -20,14 +20,22 @@ public class PaymentService {
     }
 
     public PaymentCard encryptCard(PaymentCard card) throws Exception {
-        card.setCardNumber(CryptoUtils.encrypt(card.getCardNumber(), secretKey));
-        //card.setExpirationDate(CryptoUtils.encrypt(card.getExpirationDate(), secretKey));
+        String encodedCardNumber = CryptoUtils.encrypt(card.getCardNumber(), secretKey);
+        card.setCardNumber(encodedCardNumber);
+
+        String encodedDate = CryptoUtils.encrypt(card.getExpirationDate(), secretKey);
+        card.setExpirationDate(encodedDate);
+
         return card;
     }
 
     public PaymentCard decryptCard(PaymentCard card) throws Exception {
-        card.setCardNumber(CryptoUtils.decrypt(card.getCardNumber(), secretKey));
-        //card.setExpirationDate(CryptoUtils.decrypt(card.getExpirationDate(), secretKey));
+        String decodedCardNumber = CryptoUtils.decrypt(card.getCardNumber(), secretKey);
+        card.setCardNumber(decodedCardNumber);
+
+        String decodedDate = CryptoUtils.decrypt(card.getExpirationDate(), secretKey);
+        card.setExpirationDate(decodedDate);
+
         return card;
     }
 }

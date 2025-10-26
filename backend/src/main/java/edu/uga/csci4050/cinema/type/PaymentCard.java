@@ -4,22 +4,18 @@ import java.time.LocalDate;
 
 public class PaymentCard {
     private String cardNumber;
-    private LocalDate expirationDate;
-    private String billingAddress;
+    private String expirationDate;
     private boolean isDefault;
 
     public PaymentCard() {
         cardNumber = null;
         expirationDate = null;
-        billingAddress = null;
         isDefault = false;
     }
 
-    public PaymentCard(String cardNumber, LocalDate expirationDate, String billingAddress, boolean isDefault) {
-        // Hash the card number for security
+    public PaymentCard(String cardNumber, String expirationDate, boolean isDefault) {
         this.cardNumber = cardNumber;
         this.expirationDate = expirationDate;
-        this.billingAddress = billingAddress;
         this.isDefault = isDefault;
     }
 
@@ -31,20 +27,12 @@ public class PaymentCard {
         this.cardNumber = cardNumber;
     }
 
-    public LocalDate getExpirationDate() {
+    public String getExpirationDate() {
         return expirationDate;
     }
 
-    public void setExpirationDate(LocalDate expirationDate) {
+    public void setExpirationDate(String expirationDate) {
         this.expirationDate = expirationDate;
-    }
-
-    public String getBillingAddress() {
-        return billingAddress;
-    }
-
-    public void setBillingAddress(String billingAddress) {
-        this.billingAddress = billingAddress;
     }
 
     public boolean isDefault() {
