@@ -29,11 +29,11 @@ export default function Home() {
 
     setFilterParams(
       (prev) =>
-        (prev = {
-          ...prev,
-          title: titleValue.trim() ?? undefined,
-          genres: genres ?? undefined,
-        })
+      (prev = {
+        ...prev,
+        title: titleValue.trim() ?? undefined,
+        genres: genres ?? undefined,
+      })
     );
   };
 
@@ -66,7 +66,7 @@ export default function Home() {
           <input
             className="border-1 rounded-md px-1"
             type="text"
-            placeholder="Enter any amount of genres"
+            placeholder="Enter a genre(s)"
             name="genreInput"
           />
           <button
