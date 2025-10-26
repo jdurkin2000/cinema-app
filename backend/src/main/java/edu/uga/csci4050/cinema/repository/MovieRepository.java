@@ -12,4 +12,6 @@ public interface MovieRepository extends MongoRepository<MovieItem, String>, Cus
     public List<MovieItem> findByGenresContaining(List<String> genres);
 
     public List<MovieItem> findByTitleAndGenres(String title, List<String> genres);
+    
+    public List<MovieItem> findByIsUpcoming(boolean isUpcoming);
 }

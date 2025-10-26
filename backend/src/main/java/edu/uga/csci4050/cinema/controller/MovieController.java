@@ -24,7 +24,6 @@ public class MovieController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    
     @GetMapping
     public ResponseEntity<List<MovieItem>> getMovies(
             @RequestParam(required = false) String title,
@@ -34,5 +33,17 @@ public class MovieController {
 
         return HttpUtils.buildResponseEntity(collection,
                 "Could not find movies that match the applied filters.");
+    }
+
+    @GetMapping("/currently-running")
+    public ResponseEntity<List<MovieItem>> getCurrentlyRunningMovies() {
+        List<MovieItem> movies = movieRepository.findByIsUpcoming(false);
+        return HttpUtils.buildResponseEntity(movies, "No currently running movies found.");
+    }
+
+    @GetMapping("/upcoming")
+    public ResponseEntity<List<MovieItem>> getUpcomingMovies() {
+        List<MovieItem> movies = movieRepository.findByIsUpcoming(true);
+        return HttpUtils.buildResponseEntity(movies, "No upcoming movies found.");
     }
 }
