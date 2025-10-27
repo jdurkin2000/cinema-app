@@ -13,7 +13,7 @@ import java.util.Base64;
 public class CryptoService {
     private final byte[] keyBytes;
     private final SecureRandom rnd = new SecureRandom();
-    public CryptoService(@Value("${app.crypto.key.base64}") String base64) {
+    public CryptoService(@Value("${payment.aes-key}") String base64) {
         this.keyBytes = java.util.Base64.getDecoder().decode(base64);
     }
     public String encrypt(String plaintext) {
