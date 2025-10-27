@@ -125,4 +125,84 @@ public class ProfileController {
         if (pan.matches("^3[47].*")) return "Amex";
         return "Card";
     }
+
+    @PutMapping("/cards/{cardId}")
+    public ResponseEntity<?> updateCard(
+            Authentication auth,
+            @PathVariable String cardId,
+            @RequestBody @Valid UpdateCardRequest body) {
+
+        var u = me(auth).orElse(null);
+        if (u == null) return ResponseEntity.status(401).build();
+
+        var cardOpt = u.getPaymentCards().stream()
+                        .filter(c -> c.getId().equals(cardId))
+                        .findFirst();
+
+        if (cardOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Card not found"));
+        }
+
+        var card = cardOpt.get();
+        boolean changed = false;
+
+        // Update billing name
+        if (body.billingName != null && !body.billingName.isBlank()) {
+            card.setBillingName(body.billingName);
+            changed = true;
+        }
+
+        // Update billing address
+        if (body.billingAddress != null) {
+            card.setBillingAddress(body.billingAddress);
+            changed = true;
+        }
+
+        // Update expiration month
+        if (body.expMonth != null) {
+            if (body.expMonth < 1 || body.expMonth > 12) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Invalid expiration month"));
+            }
+            card.setExpMonth(body.expMonth);
+            changed = true;
+        }
+
+        // Update expiration year
+        if (body.expYear != null) {
+            int currentYear = java.time.Year.now().getValue();
+            if (body.expYear < currentYear) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Expiration year cannot be in the past"));
+            }
+            card.setExpYear(body.expYear);
+            changed = true;
+        }
+
+        if (changed) {
+            users.save(u);
+            mail.send(u.getEmail(), "Payment card updated", 
+                    "Your payment card ending with " + card.getLast4() + " was updated.");
+        }
+
+        Map<String, Object> resp = new HashMap<>();
+        resp.put("id", card.getId());
+        resp.put("brand", card.getBrand());
+        resp.put("last4", card.getLast4());
+        resp.put("billingName", card.getBillingName());
+        resp.put("billingAddress", card.getBillingAddress());
+        resp.put("expMonth", card.getExpMonth());
+        resp.put("expYear", card.getExpYear());
+
+        return ResponseEntity.ok(resp);
+    }
+
+    // DTO for update request
+    public static class UpdateCardRequest {
+        @NotBlank
+        public String id; // The card ID to update
+        public String billingName;
+        public Map<String, String> billingAddress;
+        public Integer expMonth;
+        public Integer expYear;
+    }
+
 }
