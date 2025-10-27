@@ -60,3 +60,10 @@ export async function removeCard(token:string, cardId:string){
   const res = await axios.delete(`${BASE}/api/profile/cards/${cardId}`, { headers: { Authorization:`Bearer ${token}` }});
   return res.data;
 }
+
+export async function updateCard(token: string, cardId: string, data: any) {
+  const res = await axios.put(`${BASE}/api/profile/cards/${cardId}`, data, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.data;
+}

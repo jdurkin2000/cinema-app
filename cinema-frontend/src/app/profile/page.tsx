@@ -1,9 +1,9 @@
 "use client";
-import { useEffect, useState } from "react";
-import { addCard, changePassword, me, removeCard, updateProfile } from "@/libs/authApi";
+import { useEffect, useState, FormEvent } from "react";
+import { addCard, changePassword, me, removeCard, updateCard, updateProfile } from "@/libs/authApi";
 import { clearToken, getToken } from "@/libs/authStore";
 import { useRouter } from "next/navigation";
-import Link from "next/link"; // Added this import
+import Link from "next/link";
 
 export default function Profile() {
   const router = useRouter();
@@ -11,76 +11,116 @@ export default function Profile() {
   const [data, setData] = useState<any>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [editingCardId, setEditingCardId] = useState<string | null>(null);
 
-  useEffect(() => { const t = getToken(); if (!t) { router.push("/login"); return; } setToken(t); load(t); }, []);
-  async function load(t: string) { try { setData(await me(t)); } catch { router.push("/login"); } }
+  useEffect(() => {
+    const t = getToken();
+    if (!t) { router.push("/login"); return; }
+    setToken(t);
+    load(t);
+  }, []);
 
-  async function saveProfile(e: any) {
-    e.preventDefault(); setMsg(null); setErr(null);
+  async function load(t: string) {
+    try {
+      setData(await me(t));
+    } catch {
+      router.push("/login");
+    }
+  }
+
+  async function saveProfile(e: FormEvent) {
+    e.preventDefault();
+    setMsg(null); setErr(null);
+    const target = e.target as typeof e.target & {
+      name: { value: string };
+      promos: { checked: boolean };
+      line1: { value: string }; line2: { value: string };
+      city: { value: string }; state: { value: string }; zip: { value: string };
+    };
     try {
       await updateProfile(token!, {
-        firstLastName: e.target.name.value,
-        promotionsOptIn: e.target.promos.checked,
+        firstLastName: target.name.value,
+        promotionsOptIn: target.promos.checked,
         address: {
-          line1: e.target.line1.value, line2: e.target.line2.value,
-          city: e.target.city.value, state: e.target.state.value, zip: e.target.zip.value
+          line1: target.line1.value,
+          line2: target.line2.value,
+          city: target.city.value,
+          state: target.state.value,
+          zip: target.zip.value
         }
       });
-      setMsg("Saved"); await load(token!);
-    } catch (x: any) { setErr(x?.response?.data?.message || "Update failed"); }
+      setMsg("Profile saved");
+      await load(token!);
+    } catch (x: any) {
+      setErr(x?.response?.data?.message || "Update failed");
+    }
   }
 
-  async function changePwd(e: any) {
-    e.preventDefault(); setMsg(null); setErr(null);
+  async function changePwd(e: FormEvent) {
+    e.preventDefault();
+    setMsg(null); setErr(null);
+    const target = e.target as typeof e.target & {
+      current: { value: string };
+      new: { value: string };
+    };
     try {
-      await changePassword(token!, e.target.current.value, e.target.new.value);
+      await changePassword(token!, target.current.value, target.new.value);
       setMsg("Password changed");
-    } catch (x: any) { setErr(x?.response?.data?.message || "Change password failed"); }
+    } catch (x: any) {
+      setErr(x?.response?.data?.message || "Change password failed");
+    }
   }
 
-  async function addCardSubmit(e: any) {
-    e.preventDefault(); setMsg(null); setErr(null);
+  async function addCardSubmit(e: FormEvent) {
+    e.preventDefault();
+    setMsg(null); setErr(null);
+    const target = e.target as typeof e.target & {
+      number: { value: string };
+      month: { value: string }; year: { value: string };
+      billingName: { value: string };
+      bline1: { value: string }; bline2: { value: string };
+      bcity: { value: string }; bstate: { value: string }; bzip: { value: string };
+    };
     try {
       await addCard(token!, {
-        number: e.target.number.value,
-        expMonth: Number(e.target.month.value),
-        expYear: Number(e.target.year.value),
-        billingName: e.target.billingName.value,
+        number: target.number.value,
+        expMonth: Number(target.month.value),
+        expYear: Number(target.year.value),
+        billingName: target.billingName.value,
         billingAddress: {
-          line1: e.target.bline1.value, line2: e.target.bline2.value,
-          city: e.target.bcity.value, state: e.target.bstate.value, zip: e.target.bzip.value
+          line1: target.bline1.value,
+          line2: target.bline2.value,
+          city: target.bcity.value,
+          state: target.bstate.value,
+          zip: target.bzip.value
         }
       });
-      setMsg("Card added"); await load(token!);
-    } catch (x: any) { setErr(x?.response?.data?.message || "Add card failed"); }
+      setMsg("Card added");
+      await load(token!);
+    } catch (x: any) {
+      setErr(x?.response?.data?.message || "Add card failed");
+    }
   }
 
   if (!data) return null;
 
   return (
     <div className="max-w-2xl mx-auto p-6 space-y-6">
+      {/* Header */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-semibold">My Profile</h1>
-
-        {/* --- Wrapper for buttons on the right --- */}
         <div className="flex items-center gap-4">
-          {/* --- NEW Homepage Link Button --- */}
-          <Link
-            href="/"
-            className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100"
-          >
+          <Link href="/" className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
             Back to Home
           </Link>
-
-          {/* --- Existing Logout Button --- */}
-          <button className="text-red-600 underline"
-            onClick={() => { clearToken(); router.push("/"); }}>Logout</button>
+          <button className="text-red-600 underline" onClick={() => { clearToken(); router.push("/"); }}>Logout</button>
         </div>
       </div>
 
       {msg && <div className="text-green-600">{msg}</div>}
       {err && <div className="text-red-600">{err}</div>}
 
+      {/* Profile Form */}
       <form onSubmit={saveProfile} className="space-y-2 border p-4 rounded">
         <div className="font-medium">Profile</div>
         <input name="name" className="border p-2 w-full" defaultValue={data.name} required />
@@ -99,6 +139,7 @@ export default function Profile() {
         <button className="bg-black text-white px-4 py-2 rounded mt-2">Save</button>
       </form>
 
+      {/* Change Password */}
       <form onSubmit={changePwd} className="space-y-2 border p-4 rounded">
         <div className="font-medium">Change password</div>
         <input name="current" className="border p-2 w-full" type="password" placeholder="Current password" required />
@@ -106,18 +147,82 @@ export default function Profile() {
         <button className="bg-black text-white px-4 py-2 rounded">Change</button>
       </form>
 
+      {/* Payment Cards */}
       <div className="space-y-2 border p-4 rounded">
         <div className="font-medium">Payment cards (max 4)</div>
-        <ul className="space-y-1">
+        <ul className="space-y-2">
           {data.paymentCards.map((c: any) => (
-            <li key={c.id} className="flex justify-between items-center">
-              <span>{c.brand} •••• {c.last4}  (exp {c.expMonth}/{c.expYear})</span>
-              <button className="text-sm text-red-600 underline" onClick={async () => {
-                await removeCard(token!, c.id); await load(token!);
-              }}>Remove</button>
+            <li key={c.id} className="flex flex-col gap-2 border-b pb-2">
+              <div className="flex justify-between items-center">
+                <span>{c.brand} •••• {c.last4}  (exp {c.expMonth}/{c.expYear})</span>
+                <div className="flex gap-2">
+                  <button
+                    className="text-sm text-blue-600 underline"
+                    onClick={() => setEditingCardId(c.id === editingCardId ? null : c.id)}
+                  >
+                    {editingCardId === c.id ? "Cancel" : "Edit"}
+                  </button>
+                  <button
+                    className="text-sm text-red-600 underline"
+                    onClick={async () => { await removeCard(token!, c.id); await load(token!); }}
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+
+              {editingCardId === c.id && (
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    const target = e.target as typeof e.target & {
+                      number?: { value: string };
+                      month: { value: string };
+                      year: { value: string };
+                      billingName: { value: string };
+                      bline1: { value: string };
+                      bline2: { value: string };
+                      bcity: { value: string };
+                      bstate: { value: string };
+                      bzip: { value: string };
+                    };
+                    try {
+                      await updateCard(token!, c.id, {
+                        number: target.number?.value || undefined, // optional card number edit
+                        expMonth: Number(target.month.value),
+                        expYear: Number(target.year.value),
+                        billingName: target.billingName.value,
+                        billingAddress: {
+                          line1: target.bline1.value,
+                          line2: target.bline2.value,
+                          city: target.bcity.value,
+                          state: target.bstate.value,
+                          zip: target.bzip.value
+                        }
+                      });
+                      setEditingCardId(null);
+                      await load(token!);
+                    } catch (x: any) {
+                      setErr(x?.response?.data?.message || "Update card failed");
+                    }
+                  }}
+                  className="grid grid-cols-2 gap-2 mt-2"
+                >
+                  <input name="month" type="number" min={1} max={12} defaultValue={c.expMonth} className="border p-2" required />
+                  <input name="year" type="number" min={2024} max={2100} defaultValue={c.expYear} className="border p-2" required />
+                  <input name="billingName" className="border p-2 col-span-2" defaultValue={c.billingName} required />
+                  <input name="bline1" className="border p-2 col-span-2" defaultValue={c.billingAddress.line1} required />
+                  <input name="bline2" className="border p-2 col-span-2" defaultValue={c.billingAddress.line2} />
+                  <input name="bcity" className="border p-2" defaultValue={c.billingAddress.city} required />
+                  <input name="bstate" className="border p-2" defaultValue={c.billingAddress.state} required />
+                  <input name="bzip" className="border p-2" defaultValue={c.billingAddress.zip} required />
+                  <button className="bg-black text-white px-4 py-2 rounded col-span-2">Save</button>
+                </form>
+              )}
             </li>
           ))}
         </ul>
+
         {data.paymentCards.length < 4 && (
           <form onSubmit={addCardSubmit} className="grid grid-cols-2 gap-2 mt-2">
             <input name="number" className="border p-2 col-span-2" placeholder="Card number" required />
@@ -136,4 +241,3 @@ export default function Profile() {
     </div>
   );
 }
-
