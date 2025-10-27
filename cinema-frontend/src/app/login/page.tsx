@@ -19,7 +19,7 @@ export default function LoginPage(){
       const data = await login({ email, password, rememberMe: remember });
       saveToken(data.token, remember);
       // redirect by role
-      router.push(data.role === "ADMIN" ? "/admin" : "/profile");
+      router.push(data.role === "ADMIN" ? "/admin" : "/");
     }catch(e:any){ setErr(e?.response?.data?.message || "Login failed"); }
   }
 
