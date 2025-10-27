@@ -10,7 +10,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import edu.uga.csci4050.cinema.controller.dto.ProfileDtos;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -32,20 +35,30 @@ public class ProfileController {
     @GetMapping
     public ResponseEntity<?> get(Authentication auth){
         var u = me(auth).orElse(null);
-        if (u==null) return ResponseEntity.status(401).build();
-        // mask cards (no PAN)
-        return ResponseEntity.ok(Map.of(
-                "email", u.getEmail(),
-                "name", u.getName(),
-                "role", u.getRole().name(),
-                "promotionsOptIn", u.isPromotionsOptIn(),
-                "address", u.getAddress(),
-                "paymentCards", u.getPaymentCards().stream().map(c -> Map.of(
-                        "id", c.getId(), "brand", c.getBrand(), "last4", c.getLast4(),
-                        "expMonth", c.getExpMonth(), "expYear", c.getExpYear(),
-                        "billingName", c.getBillingName(), "billingAddress", c.getBillingAddress()
-                )).toList()
-        ));
+    if (u == null) return ResponseEntity.status(401).build();
+
+    Map<String, Object> resp = new HashMap<>();
+    resp.put("email", u.getEmail());
+    resp.put("name", u.getName());
+    resp.put("role", u.getRole() != null ? u.getRole().name() : "USER");
+    resp.put("promotionsOptIn", u.isPromotionsOptIn());
+    resp.put("address", u.getAddress() != null ? u.getAddress() : Map.of());
+
+    List<Map<String, Object>> cards = u.getPaymentCards().stream().map(c -> {
+        Map<String, Object> m = new HashMap<>();
+        m.put("id", c.getId() != null ? c.getId() : "");
+        m.put("brand", c.getBrand() != null ? c.getBrand() : "");
+        m.put("last4", c.getLast4() != null ? c.getLast4() : "");
+        m.put("expMonth", c.getExpMonth());
+        m.put("expYear", c.getExpYear());
+        m.put("billingName", c.getBillingName() != null ? c.getBillingName() : "");
+        m.put("billingAddress", c.getBillingAddress() != null ? c.getBillingAddress() : Map.of());
+        return m;
+    }).toList();
+
+    resp.put("paymentCards", cards);
+
+    return ResponseEntity.ok(resp);
     }
 
     @PutMapping

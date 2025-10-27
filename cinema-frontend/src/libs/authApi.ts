@@ -21,6 +21,21 @@ export async function resetPassword(token:string, newPassword:string){
   await axios.post(`${BASE}/api/auth/reset`, { token, newPassword });
 }
 
+export async function verify(token: string) {
+  try {
+    // We allow redirects manually, because Spring returns 302
+    const res = await axios.get(`${BASE}/api/auth/verify`, {
+      params: { token },
+      // So we can catch both 302 redirect and errors
+      validateStatus: () => true,
+    });
+    return res;
+  } catch (err: any) {
+    throw new Error(err.response?.data?.message || `Verification failed - ${err.response.data.message}`);
+  }
+}
+
+
 export async function me(token:string){
   const res = await axios.get(`${BASE}/api/profile`, { headers: { Authorization:`Bearer ${token}` }});
   return res.data;

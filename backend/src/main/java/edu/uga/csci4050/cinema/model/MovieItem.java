@@ -35,6 +35,9 @@ public class MovieItem {
     private LocalDate released;
     private boolean isUpcoming;
 
+    // Default constructor required for MongoDB
+    public MovieItem() {}
+
     public MovieItem(String title, List<String> genres,
                      List<String> cast, String director, String producer,
                      String synopsis, List<String> reviews, String poster,
@@ -153,5 +156,62 @@ public class MovieItem {
 
     public boolean isUpcoming() {
         return isUpcoming;
+    }
+
+    // Setters for MongoDB deserialization
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public void setGenres(List<String> genres) {
+        this.genres = genres;
+    }
+
+    public void setCast(List<String> cast) {
+        this.cast = cast;
+    }
+
+    public void setDirector(String director) {
+        this.director = director;
+    }
+
+    public void setProducer(String producer) {
+        this.producer = producer;
+    }
+
+    public void setSynopsis(String synopsis) {
+        this.synopsis = synopsis;
+    }
+
+    public void setReviews(List<String> reviews) {
+        this.reviews = reviews;
+    }
+
+    public void setPoster(String poster) {
+        this.poster = poster;
+    }
+
+    public void setTrailer(String trailer) {
+        this.trailer = trailer;
+    }
+
+    public void setRating(RatingCode rating) {
+        this.rating = rating;
+    }
+
+    public void setShowtimes(List<LocalDateTime> showtimes) {
+        this.showtimes = showtimes;
+    }
+
+    public void setReleased(LocalDate released) {
+        this.released = released;
+    }
+
+    public void setUpcoming(boolean upcoming) {
+        isUpcoming = upcoming;
     }
 }
