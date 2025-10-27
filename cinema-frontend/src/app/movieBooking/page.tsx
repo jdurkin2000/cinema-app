@@ -46,7 +46,7 @@ export default function Home() {
   const showtime = params.get("showtime") || "No showtime found";
   const receivedParams = movieId && showtime;
 
-  const { movies, loading, error } = useMovies({ id: movieId || "0" });
+  const { movies, status } = useMovies({ id: movieId || "0" });
 
   // State to track selected seats
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);

@@ -12,8 +12,7 @@ export default function Home() {
 
   const {
     movies,
-    loading: isLoading,
-    error,
+    status
   } = useMovies({ id: movieId || "0" });
   const [selectedShowtime, setSelectedShowtime] = useState<Date | null>(null);
   const [isShowtimeOpen, setIsShowtimeOpen] = useState(false);
@@ -24,6 +23,8 @@ export default function Home() {
   };
 
   const movie = movies[0];
+  const currentState = status.currentState;
+  const isLoading = currentState === "Loading";
 
   return (
     <main className="min-h-dvh bg-background text-foreground">
@@ -230,12 +231,12 @@ export default function Home() {
             )}
 
             {/* Error state */}
-            {error && (
+            {currentState === "Error" && (
               <div className="rounded-2xl border border-red-500/40 bg-red-500/5 p-4 text-sm">
                 <p className="font-medium text-red-600">
                   Failed to load movie.
                 </p>
-                <p className="opacity-80">{error.message}</p>
+                <p className="opacity-80">{status.message}</p>
               </div>
             )}
           </div>
