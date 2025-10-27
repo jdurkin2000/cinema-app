@@ -29,7 +29,9 @@ public class MovieController {
             @RequestParam(required = false) String title,
             @RequestParam(required = false) List<String> genres) {
 
+        System.out.println("Searching for movies");
         List<MovieItem> collection = movieRepository.searchMovies(title, genres);
+        System.out.println("Returning movies now");
 
         return HttpUtils.buildResponseEntity(collection,
                 "Could not find movies that match the applied filters.");

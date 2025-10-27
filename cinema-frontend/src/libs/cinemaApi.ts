@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Movie from "@/models/movie";
+import Error from "next/error";
 
 const baseApiString = "http://localhost:8080/api/movies";
 
@@ -22,7 +23,12 @@ type ErrorInfo = {
   message: string;
 };
 
-function getErrorMessage(status?: number): string {
+export type Status = {
+  message: string;
+  currentState: "Loading" | "Success" | "Not Found" | "Error";
+};
+
+export function getErrorMessage(status?: number): string {
   switch (status) {
     case 400:
       return "Bad request. Please check your input.";
@@ -56,29 +62,33 @@ function dateReviver(key: string, value: unknown) {
 }
 
 /**
- * Custom React hook for fetching movies from the API.
+ * Custom React hook to fetch movie data from the backend API using the provided query parameters.
  *
- * @param params Optional query parameters to filter movies.
- *   Can include `id`, `title`, or `genres` to fetch specific movies.
+ * The hook:
+ * - initializes a temporary "loading" movie item while the request is in flight,
+ * - issues an HTTP GET request (via axios) with a JSON date reviver,
+ * - accepts either a single Movie or an array of Movie objects from the server and normalizes
+ *   the response to an array,
+ * - updates an AsyncState status value to reflect Loading, Success, NotFound (404) or Error,
+ * - re-runs when params.genres, params.id or params.title change.
+ *
+ * @param params - Optional MovieQueryParams object used to build the request URL (defaults to {}).
+ *                 Typical keys include id, title, genres, etc. Only the listed dependencies
+ *                 (params.genres, params.id, params.title) are watched by the effect.
  *
  * @returns An object containing:
- *   - `movies`: The list of fetched movies, or null if not yet loaded.
- *   - `loading`: True while the request is in progress.
- *   - `error`: Error information if the request failed, or null.
+ *   - movies: Movie[] - the fetched movie records (or a single movie wrapped in an array).
+ *   - status: AsyncState - the current async lifecycle state (Loading | Success | NotFound | Error).
+ *
+ * @remarks
+ * - Before the request completes the hook exposes a single "loading" Movie placeholder in the movies array.
+ * - The response is parsed with a dateReviver so any serialized date fields are restored to Date objects.
+ * - If the network/client error indicates HTTP 404, the hook sets status to AsyncState.NotFound; otherwise it sets AsyncState.Error.
+ * - The hook intentionally disables exhaustive-deps linting and only depends on params.genres, params.id and params.title.
  *
  * @example
- * const { movies, loading, error } = useMovies({ title: "Inception", genres: ["Sci-Fi"] });
- *
- * if (loading) return <p>Loading movies...</p>;
- * if (error) return <p>Error: {error.message}</p>;
- *
- * return (
- *   <ul>
- *     {movies?.map(movie => (
- *       <li key={movie.id}>{movie.title}</li>
- *     ))}
- *   </ul>
- * );
+ * // Fetch horror movies
+ * const { movies, status } = useMovies({ genres: ["Horror"] });
  */
 export function useMovies(params: MovieQueryParams = {}) {
   const loadingMovie: Movie[] = [
@@ -101,18 +111,19 @@ export function useMovies(params: MovieQueryParams = {}) {
   ];
 
   const [movies, setMovies] = useState<Movie[]>(loadingMovie);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<null | ErrorInfo>(null);
+  const [status, setStatus] = useState<Status>({
+    currentState: "Loading",
+    message: "Requesting Movies",
+  });
 
   useEffect(() => {
     const url = buildUrlString(params);
 
-    setLoading(true);
-    setError(null);
+    setStatus({ currentState: "Loading", message: "Requesting Movies" });
 
     axios
       .get<Movie | Movie[]>(url, {
-        transformResponse: [(data) => JSON.parse(data, dateReviver)],
+        transformResponse: [(data) => (data ? JSON.parse(data, dateReviver) : null)],
       })
       .then((res) => {
         // If res.data is an array, use it; if single movie, wrap in array
@@ -122,14 +133,32 @@ export function useMovies(params: MovieQueryParams = {}) {
           : res.data
           ? [res.data]
           : [];
+          
+        if (dataArray.length === 0) {
+          setStatus({ currentState: "Not Found", message: "Movies not found." });
+          return;
+        }
+
         setMovies(dataArray);
+        setStatus({
+          currentState: "Success",
+          message: "Succesfully Fetched Movies",
+        });
       })
-      .catch((err) => setError(buildError(err)))
-      .finally(() => setLoading(false));
+      .catch((err) => {
+        console.log("Caught error:", err);
+        const parsedError = buildError(err);
+        const newState = parsedError.status == 404 ? "Not Found" : "Error";
+        const newStatus: Status = {
+          currentState: newState,
+          message: parsedError.message,
+        };
+        setStatus(newStatus);
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.genres, params.id, params.title]);
 
-  return { movies, loading, error };
+  return { movies, status };
 }
 
 /**

@@ -37,7 +37,8 @@ function decodeJwt(token: string) {
 
 export default function Home() {
   const [filterParams, setFilterParams] = useState<MovieQueryParams>({});
-  const { movies, loading, error } = useMovies(filterParams);
+  const { movies, status } = useMovies(filterParams);
+  const currentState = status.currentState;
 
   // State to hold the user's name. If null, user is not logged in.
   const [username, setUsername] = useState<string | null>(null);
@@ -64,9 +65,6 @@ export default function Home() {
     setUsername(null); // Clear the username from state
     window.location.reload(); // Reload the page to reset everything
   };
-
-  if (loading) return <p>Loading movies...</p>;
-  if (error) return <p>Error: {error.message}</p>;
 
   const handleMovieSearch = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -102,9 +100,9 @@ export default function Home() {
         <Image src={logo} alt="Site Logo" className="nav-logo" />
         <h1 className="title">CINEMA</h1>
         <div className="nav-links">
-          <a href="#home">Home</a>
-          <a href="#browse">Browse Movies</a>
-          <a href="#about">About</a>
+          {/* <a href="#home">Home</a> */}
+          {/* <a href="#browse">Browse Movies</a> */}
+          {/* <a href="#about">About</a> */}
 
           {/* --- Conditional Login/Logout Display --- */}
           {username ? (
@@ -112,6 +110,9 @@ export default function Home() {
             <>
               <Link href="/profile" className="text-white font-semibold">
                 Welcome, {username}
+              </Link>
+              <Link href="/profile" className="cursor-pointer">
+                Edit Profile
               </Link>
               <a href="#" onClick={handleLogout} className="cursor-pointer">
                 Logout
@@ -159,10 +160,16 @@ export default function Home() {
           )}
         </form>
 
-        <p className="now-showing">Now Showing</p>
-        {getMovieList(movies.filter((movie) => !movie.upcoming))}
-        <div className="now-showing">Upcoming</div>
-        {getMovieList(movies.filter((movie) => movie.upcoming))}
+        {currentState === "Success" ? (
+          <>
+            <p className="now-showing">Now Showing</p>
+            {getMovieList(movies.filter((movie) => !movie.upcoming))}
+            <div className="now-showing">Upcoming</div>
+            {getMovieList(movies.filter((movie) => movie.upcoming))}
+          </>
+        ) : (
+          <p className="now-showing text-red-500">{status.message}</p>
+        )}
       </div>
     </div>
   );

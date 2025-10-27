@@ -1,4 +1,4 @@
-package edu.uga.csci4050.cinema.security;
+package edu.uga.csci4050.cinema.config;
 
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
@@ -22,6 +22,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import edu.uga.csci4050.cinema.security.JwtService;
 
 import java.io.IOException;
 import java.util.List;
