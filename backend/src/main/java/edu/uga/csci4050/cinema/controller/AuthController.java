@@ -7,9 +7,13 @@ import edu.uga.csci4050.cinema.security.JwtService;
 import edu.uga.csci4050.cinema.service.MailService;
 import edu.uga.csci4050.cinema.util.TokenUtil;
 import jakarta.validation.Valid;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.MailException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.net.URI;
 import java.time.Instant;
@@ -46,11 +50,15 @@ public class AuthController {
         u.setEmailVerifyTokenHash(TokenUtil.sha256(token));
         u.setEmailVerifyExpiry(Instant.now().plus(24, ChronoUnit.HOURS));
 
-        users.save(u);
-
         String link = mail.frontendUrl()+"/verify?token="+token;
-        mail.send(u.getEmail(), "Confirm your Cinema E-Booking account",
+        try {
+            mail.send(u.getEmail(), "Confirm your Cinema E-Booking account",
                 "Hi "+u.getName()+",\n\nPlease confirm your email by visiting:\n"+link+"\n\nThis link expires in 24 hours.");
+
+            users.save(u);
+        } catch (MailException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getLocalizedMessage());
+        }
 
         return ResponseEntity.ok(Map.of("message","Registered. Please check your email to confirm."));
     }
