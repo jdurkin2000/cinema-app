@@ -119,6 +119,59 @@ public class ProfileController {
         return ResponseEntity.ok(Map.of("message","Removed"));
     }
 
+    @PutMapping("/cards/{cardId}")
+public ResponseEntity<?> updateCard(
+        Authentication auth,
+        @PathVariable String cardId,
+        @RequestBody Map<String, Object> body
+) {
+    var u = me(auth).orElse(null);
+    if (u == null)
+        return ResponseEntity.status(401).build();
+
+    var cards = u.getPaymentCards();
+    var card = cards.stream()
+            .filter(c -> c.getId().equals(cardId))
+            .findFirst()
+            .orElse(null);
+
+    if (card == null)
+        return ResponseEntity.badRequest().body(Map.of("message", "Card not found"));
+
+    // Extract and apply updates from request body
+    if (body.containsKey("number")) {
+        String pan = ((String) body.get("number")).replaceAll("\\s", "");
+        if (pan.length() < 12 || pan.length() > 19) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Invalid card number"));
+        }
+        card.setLast4(pan.substring(pan.length() - 4));
+        card.setBrand(brandOf(pan));
+        card.setNumberEnc(crypto.encrypt(pan));
+    }
+    if (body.containsKey("expMonth")) card.setExpMonth((Integer) body.get("expMonth"));
+    if (body.containsKey("expYear")) card.setExpYear((Integer) body.get("expYear"));
+    if (body.containsKey("billingName")) card.setBillingName((String) body.get("billingName"));
+
+    if (body.containsKey("billingAddress")) {
+        Map<String, String> addr = (Map<String, String>) body.get("billingAddress");
+        // Use the existing billing address or create a new Address object if null
+        User.Address address = card.getBillingAddress();
+        if (address == null) {
+            address = new User.Address();
+        }
+        // Update address fields using the Address class methods
+        if (addr.get("line1") != null) address.setLine1(addr.get("line1"));
+        if (addr.get("line2") != null) address.setLine2(addr.get("line2"));
+        if (addr.get("city") != null) address.setCity(addr.get("city"));
+        if (addr.get("state") != null) address.setState(addr.get("state"));
+        if (addr.get("zip") != null) address.setZip(addr.get("zip"));
+        card.setBillingAddress(address);
+    }
+
+    users.save(u);
+    return ResponseEntity.ok(Map.of("message", "Card updated successfully"));
+}
+
     private String brandOf(String pan){
         if (pan.startsWith("4")) return "Visa";
         if (pan.matches("^5[1-5].*")) return "Mastercard";
