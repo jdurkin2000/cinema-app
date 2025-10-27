@@ -31,7 +31,7 @@ export async function verify(token: string) {
     });
     return res;
   } catch (err: any) {
-    throw new Error(err.response?.data?.message || `Verification failed -  + ${err.response.data.message}`);
+    throw new Error(err.response?.data?.message || `Verification failed - ${err.response.data.message}`);
   }
 }
 
