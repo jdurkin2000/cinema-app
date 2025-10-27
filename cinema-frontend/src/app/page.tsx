@@ -5,12 +5,65 @@ import "./page.css";
 import logo from "@/assets/logo.png";
 import { MovieQueryParams, useMovies } from "@/libs/cinemaApi";
 import Movie from "@/models/movie";
-import { FormEvent, ReactElement, useState } from "react";
+// Updated React imports
+import { FormEvent, ReactElement, useState, useEffect } from "react";
 import Link from "next/link";
+// Import the *correct* auth store functions
+import { getToken, clearToken } from "@/libs/authStore";
+
+/**
+ * Decodes a JWT token to get the payload.
+ * @param token The JWT string.
+ *@returns The parsed JSON payload or null if decoding fails.
+ */
+function decodeJwt(token: string) {
+  try {
+    const base64Url = token.split(".")[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map(function (c) {
+          return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+        })
+        .join("")
+    );
+    return JSON.parse(jsonPayload);
+  } catch (e) {
+    console.error("Failed to decode JWT:", e);
+    return null;
+  }
+}
 
 export default function Home() {
   const [filterParams, setFilterParams] = useState<MovieQueryParams>({});
   const { movies, loading, error } = useMovies(filterParams);
+
+  // State to hold the user's name. If null, user is not logged in.
+  const [username, setUsername] = useState<string | null>(null);
+
+  // Check for login token on page load (client-side)
+  useEffect(() => {
+    // Use the correct getToken() function from your authStore
+    const token = getToken();
+    if (token) {
+      const decoded = decodeJwt(token);
+      if (decoded) {
+        // A JWT payload typically has 'name' or 'sub' (subject) for the username
+        setUsername(decoded.name || decoded.sub);
+      }
+    }
+  }, []); // The empty array [] means this runs once on mount
+
+  /**
+   * Handles the user clicking the "Logout" button.
+   */
+  const handleLogout = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault(); // Stop the link from trying to navigate
+    clearToken(); // Use the correct clearToken() function
+    setUsername(null); // Clear the username from state
+    window.location.reload(); // Reload the page to reset everything
+  };
 
   if (loading) return <p>Loading movies...</p>;
   if (error) return <p>Error: {error.message}</p>;
@@ -29,11 +82,11 @@ export default function Home() {
 
     setFilterParams(
       (prev) =>
-        (prev = {
-          ...prev,
-          title: titleValue.trim() ?? undefined,
-          genres: genres ?? undefined,
-        })
+      (prev = {
+        ...prev,
+        title: titleValue.trim() ?? undefined,
+        genres: genres ?? undefined,
+      })
     );
   };
 
@@ -52,7 +105,24 @@ export default function Home() {
           <a href="#home">Home</a>
           <a href="#browse">Browse Movies</a>
           <a href="#about">About</a>
-          <Link href={"/login"}>Login</Link>
+
+          {/* --- Conditional Login/Logout Display --- */}
+          {username ? (
+            // User IS logged in
+            <>
+              <Link href="/profile" className="text-white font-semibold">
+                Welcome, {username}
+              </Link>
+              <a href="#" onClick={handleLogout} className="cursor-pointer">
+                Logout
+              </a>
+            </>
+          ) : (
+            // User is NOT logged in
+            <Link href={"/login"}>Login</Link>
+          )}
+          {/* --- End of Conditional Display --- */}
+
         </div>
       </nav>
 
@@ -70,19 +140,24 @@ export default function Home() {
             placeholder="Enter any amount of genres"
             name="genreInput"
           />
-          <button className="bg-purple-600 rounded-2xl px-4 py-1 cursor-pointer" type="submit">
+          <button
+            className="bg-purple-600 rounded-2xl px-4 py-1 cursor-pointer"
+            type="submit"
+          >
             Submit
           </button>
-          {displayFilters && (<div className="flex items-center relative font-bold px-2">
-            <span className="relative">{filteringByString}</span>
-            <button
-              className="absolute inset-0 opacity-0 hover:bg-red-500/90 hover:opacity-100 rounded-2xl transition-opacity duration-300 cursor-pointer"
-              onClick={() => setFilterParams({})}
-            >
-              Remove Filters
+          {displayFilters && (
+            <div className="flex items-center relative font-bold px-2">
+              <span className="relative">{filteringByString}</span>
+              <button
+                className="absolute inset-0 opacity-0 hover:bg-red-500/90 hover:opacity-100 rounded-2xl transition-opacity duration-300 cursor-pointer"
+                onClick={() => setFilterParams({})}
+              >
+                Remove Filters
               </button>
-          </div>)}
-          </form>
+            </div>
+          )}
+        </form>
 
         <p className="now-showing">Now Showing</p>
         {getMovieList(movies.filter((movie) => !movie.upcoming))}
@@ -114,3 +189,4 @@ function getMovieList(movies: Movie[]): ReactElement {
     </ol>
   );
 }
+
