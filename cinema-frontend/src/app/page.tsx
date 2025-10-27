@@ -37,7 +37,8 @@ function decodeJwt(token: string) {
 
 export default function Home() {
   const [filterParams, setFilterParams] = useState<MovieQueryParams>({});
-  const { movies, loading, error } = useMovies(filterParams);
+  const { movies, status } = useMovies(filterParams);
+  const currentState = status.currentState;
 
   // State to hold the user's name. If null, user is not logged in.
   const [username, setUsername] = useState<string | null>(null);
@@ -67,6 +68,7 @@ export default function Home() {
 
   if (loading) return <p>Loading movies...</p>;
   if (error) return <p>Error: {error.message}</p>;
+  if (currentState === "Error") alert(status.message);
 
   const handleMovieSearch = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -137,7 +139,7 @@ export default function Home() {
           <input
             className="border-1 rounded-md px-1"
             type="text"
-            placeholder="Enter any amount of genres"
+            placeholder="Enter a genre(s)"
             name="genreInput"
           />
           <button
@@ -159,10 +161,16 @@ export default function Home() {
           )}
         </form>
 
-        <p className="now-showing">Now Showing</p>
-        {getMovieList(movies.filter((movie) => !movie.upcoming))}
-        <div className="now-showing">Upcoming</div>
-        {getMovieList(movies.filter((movie) => movie.upcoming))}
+        {currentState === "Success" ? (
+          <>
+            <p className="now-showing">Now Showing</p>
+            {getMovieList(movies.filter((movie) => !movie.upcoming))}
+            <div className="now-showing">Upcoming</div>
+            {getMovieList(movies.filter((movie) => movie.upcoming))}
+          </>
+        ) : (
+          <p className="now-showing text-red-500">{status.message}</p>
+        )}
       </div>
     </div>
   );

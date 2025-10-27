@@ -40,3 +40,25 @@ Movie: {
 "released": string,
 "upcoming": boolean
 }
+
+SECURITY STUFF:
+
+to add encrypted values to application.properties:
+
+1) add the sensitive info as a property in .properties file wrapped in DEC(...)
+
+Example: secret.property=DEC(rawsensitiveinfo)
+
+2) run the command: mvn jasypt:encrypt
+
+The values will now be encoded properly in the file and is now safe to upload to github
+
+========================================================================================
+
+YOU MUST SET THE ENVIRONMENT VARIABLE {JASYPT_ENCRYPTOR_PASSWORD} BEFORE RUNNING SPRING-BOOT
+
+Before you run spring, in the same terminal you must:
+
+Linux/Mac: export JASYPT_ENCRYPTOR_PASSWORD masterPassword
+
+Windows: setx JASYPT_ENCRYPTOR_PASSWORD masterPassword

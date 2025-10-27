@@ -1,28 +1,51 @@
+#!/usr/bin/env python3
 import subprocess
 import platform
 import os
+import sys
+
+def load_properties(filepath: str) -> dict:
+    props = {}
+    try:
+        with open(filepath, "r") as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#"):  # skip empty lines/comments
+                    key, value = line.split("=", 1)
+                    props[key.strip()] = value.strip()
+    except FileNotFoundError:
+        pass
+
+    return props
 
 def open_new_terminal(command, cwd="."):
     """
     Opens a new terminal and runs a command.
-    cwd is now treated as **relative to current working directory**.
     """
     system = platform.system()
-    cwd_rel = cwd  # keep relative
-    cwd_abs = os.path.abspath(os.path.join(os.getcwd(), cwd_rel))  # just for logging if needed
+    # Always use the absolute path for reliability across OSes
+    cwd_abs = os.path.abspath(cwd)
+
+    secrets = load_properties("secrets.properties")
+    master_password = secrets.get("JASYPT_ENCRYPTOR_PASSWORD")
+    if (master_password is None):
+        print("ERROR: Could not find file ./secrets.properties or requested property value. Aborting script..", file=sys.stderr)
+        exit(1)
+
+    env = os.environ.copy()
+    env["JASYPT_ENCRYPTOR_PASSWORD"] = master_password
 
     if system == "Windows":
-        # cd /d "relative path" && command
-        subprocess.run(f'start "" cmd /k "cd /d {cwd_rel} && {command}"', shell=True)
-    elif system == "Darwin":
+        subprocess.run(f'start "" cmd /k "cd /d {cwd_abs} && {command}"', shell=True, env=env)
+    elif system == "Darwin": # This is the corrected block for macOS
         subprocess.run([
             'osascript', '-e',
-            f'tell application "Terminal" to do script "cd \\"{cwd_rel}\\"; {command}"'
-        ])
+            f'tell application "Terminal" to do script "cd \\"{cwd_abs}\\"; {command}"'
+        ], env=env)
     elif system == "Linux":
         subprocess.run([
-            'gnome-terminal', '--', 'bash', '-c', f'cd "{cwd_rel}"; {command}; exec bash'
-        ])
+            'gnome-terminal', '--', 'bash', '-c', f'cd "{cwd_abs}"; {command}; exec bash'
+        ], env=env)
     else:
         raise Exception(f"Unsupported OS: {system}")
 
