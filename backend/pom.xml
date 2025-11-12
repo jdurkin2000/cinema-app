@@ -97,6 +97,17 @@
 		<artifactId>spring-boot-starter-mail</artifactId>
 		</dependency>
 
+		<!-- Security (for @PreAuthorize) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security</artifactId>
+		</dependency>
+
+		<!-- Validation (for @Valid and jakarta.validation.*) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-validation</artifactId>
+		</dependency>
 	</dependencies>
 
 	<build>

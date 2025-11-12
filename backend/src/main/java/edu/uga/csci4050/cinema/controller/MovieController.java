@@ -1,5 +1,20 @@
 package edu.uga.csci4050.cinema.controller;
 
+// DTOs
+import edu.uga.csci4050.cinema.controller.dto.MovieDtos;
+
+// validation + security
+import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
+
+// HTTP + dates
+import org.springframework.http.HttpStatus;
+import java.time.LocalDate;
+
+// rating enum (adjust the package if yours differs)
+import edu.uga.csci4050.cinema.type.RatingCode;
+
+
 import edu.uga.csci4050.cinema.model.MovieItem;
 import edu.uga.csci4050.cinema.util.HttpUtils;
 import org.springframework.beans.factory.annotation.Autowired;
