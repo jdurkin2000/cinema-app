@@ -48,20 +48,20 @@ export default function AdminPage() {
 
         {/* Admin Actions Grid */}
         <section className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <Link href="/admin/add-movie" className={buttonStyle}>
+          <Link href="/system-admin/add-movie" className={buttonStyle}>
             { }
             <span>Add Movie</span>
           </Link>
 
-          <Link href="/admin/edit-movie" className={buttonStyle}>
+          <Link href="/system-admin/edit-movie" className={buttonStyle}>
             <span>Edit Movie</span>
           </Link>
 
-          <Link href="/admin/statistics" className={buttonStyle}>
+          <Link href="/system-admin/statistics" className={buttonStyle}>
             <span>System Statistics</span>
           </Link>
 
-          <Link href="/admin/manage-users" className={buttonStyle}>
+          <Link href="/system-admin/manage-users" className={buttonStyle}>
             <span>Manage Accounts</span>
           </Link>
         </section>
