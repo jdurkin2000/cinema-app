@@ -24,3 +24,9 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Global layout spacing so content isn't hidden under the fixed navbar */
+.content-wrapper {
+  margin-top: 8vh;
+  padding: 20px;
+}
