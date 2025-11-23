@@ -13,7 +13,7 @@
   /* Slightly transparent gradient background */
   background: linear-gradient(
     145deg,
-    rgba(85, 7, 134, 0.85),  /* 85% opacity */
+    #550786d9,  /* 85% opacity */
     rgba(0, 0, 0, 0.85)
   );
 

@@ -95,7 +95,7 @@ export default function Home() {
         <button className="movie-search-submit" type="submit">
           Submit
         </button>
-
+      </form>
         {displayFilters && (
           <div className="filter-display">
             <span>{filteringByString}</span>
@@ -107,7 +107,7 @@ export default function Home() {
             </button>
           </div>
         )}
-      </form>
+      
 
       {status.currentState === "Success" ? (
         <>
