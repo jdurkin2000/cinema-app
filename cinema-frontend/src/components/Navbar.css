@@ -1,0 +1,34 @@
+/* NavBar.css */
+.topnav {
+  display: flex;
+  align-items: center;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  height: 8vh;
+  background: linear-gradient(to bottom, #000000 50%, #7300ff 50%);
+  padding: 0 20px;
+  z-index: 100;
+}
+
+.nav-logo {
+  height: 40px;
+  width: 40px;
+}
+
+.title {
+  color: white;
+  margin-left: 10px;
+  font-size: 1.5rem;
+}
+
+.nav-links {
+  margin-left: auto;
+  display: flex;
+  gap: 1rem;
+}
+
+.nav-link-strong {
+  font-weight: bold;
+  color: white;
+}
