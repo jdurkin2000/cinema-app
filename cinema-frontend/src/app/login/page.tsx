@@ -57,7 +57,7 @@ export default function LoginPage() {
 
   return (
     <div className="p-8 max-w-md mx-auto">
-      <h1 className="text-2xl font-semibold mb-4">Sign in</h1>
+      <h1 className="text-2xl font-semibold mb-4">Login</h1>
       {verified && <p className="text-green-600 mb-3">Email verified. You can sign in now.</p>}
       <form onSubmit={onSubmit} className="space-y-3">
         <input
@@ -89,7 +89,7 @@ export default function LoginPage() {
       {err && <p className="text-red-600 mt-3">{err}</p>}
       <div className="mt-4 text-sm flex justify-between">
         <Link className="underline" href="/forgot-password">Forgot password?</Link>
-        <Link className="underline" href="/register">Sign up</Link>
+        <Link className="underline" href="/register">Don't have an account?</Link>
       </div>
     </div>
   );

@@ -25,7 +25,10 @@ export default function Navbar() {
             <button onClick={logout}>Logout</button>
           </>
         ) : (
-          <Link href="/login">Login</Link>
+          <>
+          <Link href="/register" className="register-button">Register</Link>
+          <Link href="/login" className="login-button">Login</Link>
+          </>
         )}
       </div>
     </nav>
