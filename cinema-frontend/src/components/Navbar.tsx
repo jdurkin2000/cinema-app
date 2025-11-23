@@ -1,13 +1,53 @@
 "use client";
 
-import "./Navbar.css"; // <--- just for NavBar
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import logo from "@/assets/logo.svg";
-import { useAuth } from "@/app/AuthProvider";
+import { getToken, clearToken } from "@/libs/authStore";
+import "./Navbar.css";
+
+function decodeJwt(token: string) {
+  try {
+    const base64Url = token.split(".")[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map(c => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    );
+    return JSON.parse(jsonPayload);
+  } catch {
+    return null;
+  }
+}
 
 export default function Navbar() {
-  const { user, logout } = useAuth();
+  const [username, setUsername] = useState<string | null>(null);
+
+  // Update username from token
+  const updateUser = () => {
+    const token = getToken();
+    if (token) {
+      const decoded = decodeJwt(token);
+      setUsername(decoded?.name || decoded?.sub || null);
+    } else {
+      setUsername(null);
+    }
+  };
+
+  useEffect(() => {
+    updateUser(); // initial check
+    window.addEventListener("token-changed", updateUser); // listen for token updates
+    return () => window.removeEventListener("token-changed", updateUser);
+  }, []);
+
+  const handleLogout = () => {
+    clearToken();
+    setUsername(null);
+    window.dispatchEvent(new Event("token-changed")); // notify others
+  };
 
   return (
     <nav className="topnav">
@@ -17,17 +57,16 @@ export default function Navbar() {
       </Link>
 
       <div className="nav-links">
-        {user ? (
+        {username ? (
           <>
-            <span className="nav-welcome">Welcome, {user}</span>
-            <Link href="/">Home</Link>
+            <span className="nav-welcome">Welcome, {username}</span>
             <Link href="/profile">Edit Profile</Link>
-            <button onClick={logout}>Logout</button>
+            <button className="logout-button" onClick={handleLogout}>Logout</button>
           </>
         ) : (
           <>
-          <Link href="/register" className="register-button">Register</Link>
-          <Link href="/login" className="login-button">Login</Link>
+            <Link href="/register" className="register-button">Register</Link>
+            <Link href="/login" className="signin-button">Sign in</Link>
           </>
         )}
       </div>
