@@ -209,3 +209,145 @@ function buildError(error: Error): ErrorInfo {
     message: message || getErrorMessage(status),
   };
 }
+
+// ------- Create Movie (Admin) -------
+
+export type CreateMoviePayload = {
+  title: string;
+  poster: string;
+  trailer: string;
+  rating: string; // "G" | "PG" | "PG-13" | "R" | "NC-17" | "NR"
+  genres?: string[];
+  cast?: string[];
+  director?: string;
+  producer?: string;
+  synopsis?: string;
+  reviews?: string[];
+  showtimes?: (string | Date)[];
+  released?: string | Date;
+  upcoming?: boolean;
+};
+
+/**
+ * Create a new movie (Admin only).
+ * Pass a JWT via opts.token or ensure it's in localStorage as "authToken".
+ */
+export async function createMovie(
+  payload: CreateMoviePayload,
+  opts?: { token?: string }
+): Promise<Movie> {
+  try {
+    // Normalize dates to ISO strings so Spring can parse LocalDate/LocalDateTime
+    const toIso = (v: unknown) =>
+      v instanceof Date ? v.toISOString() : typeof v === "string" ? v : undefined;
+
+    const body = {
+      ...payload,
+      released: payload.released ? toIso(payload.released) : undefined,
+      showtimes: payload.showtimes?.map(toIso).filter(Boolean),
+    };
+
+    // Prefer explicit token, fallback to localStorage (client-side)
+    const token =
+      opts?.token ??
+      (typeof window !== "undefined" ? localStorage.getItem("authToken") : null);
+
+    const res = await axios.post<Movie>(baseApiString, body, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      transformResponse: [
+        (data) => (data ? JSON.parse(data, dateReviver) : null),
+      ],
+    });
+
+    return res.data;
+  } catch (err: any) {
+    // build the error info
+    const info = buildError(err);
+
+    // ✅ use native Error types without colliding with next/error
+    type JsError = InstanceType<typeof globalThis.Error>;
+    const e: JsError & { status?: number } = new globalThis.Error(info.message);
+    e.status = info.status ?? undefined;
+    throw e;
+
+  }
+}
+
+// ------- Promotions (Admin) -------
+
+export type Promotion = {
+  id: string;
+  code: string;
+  startDate: string;
+  endDate: string;
+  discountPercent: number;
+};
+
+export type CreatePromotionPayload = {
+  code: string;
+  startDate: string;      // "yyyy-mm-dd"
+  endDate: string;        // "yyyy-mm-dd"
+  discountPercent: number;
+};
+
+const promoApiBase = "http://localhost:8080/api/promotions";
+
+/**
+ * Create a new promotion (Admin only).
+ * Validates on the backend: code, dates, discount%.
+ */
+export async function createPromotion(
+  payload: CreatePromotionPayload,
+  opts?: { token?: string }
+): Promise<Promotion> {
+  try {
+    // Prefer explicit token, fallback to localStorage (client-side)
+    const token =
+      opts?.token ??
+      (typeof window !== "undefined" ? localStorage.getItem("authToken") : null);
+
+    const res = await axios.post<Promotion>(promoApiBase, payload, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+
+    return res.data;
+  } catch (err: any) {
+    const info = buildError(err);
+
+    type JsError = InstanceType<typeof globalThis.Error>;
+    const e: JsError & { status?: number } = new globalThis.Error(info.message);
+    e.status = info.status ?? undefined;
+    throw e;
+  }
+}
+
+/**
+ * Send an existing promotion to subscribed users only.
+ */
+export async function sendPromotion(
+  promotionId: string,
+  opts?: { token?: string }
+): Promise<{ promotionId: string; emailsSent: number }> {
+  try {
+    const token =
+      opts?.token ??
+      (typeof window !== "undefined" ? localStorage.getItem("authToken") : null);
+
+    const res = await axios.post<{ promotionId: string; emailsSent: number }>(
+      `${promoApiBase}/${promotionId}/send`,
+      {},
+      {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      }
+    );
+
+    return res.data;
+  } catch (err: any) {
+    const info = buildError(err);
+
+    type JsError = InstanceType<typeof globalThis.Error>;
+    const e: JsError & { status?: number } = new globalThis.Error(info.message);
+    e.status = info.status ?? undefined;
+    throw e;
+  }
+}
