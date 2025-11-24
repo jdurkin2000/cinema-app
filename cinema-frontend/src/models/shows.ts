@@ -1,12 +1,10 @@
-import Movie from "./movie";
-
 export interface Showroom {
     id: string;
     showtimes: Showtime[];
 }
 
 export interface Showtime {
-    movie: Movie;
+    movieId: string;
     start: Date;
     bookedSeats: string[];
 }

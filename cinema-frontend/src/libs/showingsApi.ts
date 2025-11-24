@@ -13,11 +13,6 @@ function moviesOverlap(a: Date, b: Date): boolean {
   return startA < endB && startB < endA;
 }
 
-function moviesMatch(a: Movie, b: Movie): boolean {
-  return a.title === b.title;
-  // return a.id === b.id
-}
-
 const showroomsDb: Showroom[] = [
   {
     id: "a",
@@ -43,7 +38,7 @@ export function getShowtimesForMovie(movie: Movie): Showtime[] {
 
   for (const showroom of showroomsDb) {
     const filtered = showroom.showtimes.filter((showtime) =>
-      moviesMatch(showtime.movie, movie)
+      showtime.movieId === movie.id
     );
     showtimes.push(...filtered);
   }
@@ -69,7 +64,7 @@ export function getShowtimesForMovie(movie: Movie): Showtime[] {
 export function isMovieShowing(movie: Movie): boolean {
   for (const showroom of showroomsDb) {
     if (
-      showroom.showtimes.some((showtime) => moviesMatch(showtime.movie, movie))
+      showroom.showtimes.some((showtime) => showtime.movieId === movie.id)
     )
       return true;
   }
@@ -128,7 +123,7 @@ export function scheduleMovie(
     return false;
   }
 
-  const newShowtime: Showtime = { movie, start: date, bookedSeats: [] };
+  const newShowtime: Showtime = { movieId:movie.id, start: date, bookedSeats: [] };
 
   showroom.showtimes.push(newShowtime);
 
