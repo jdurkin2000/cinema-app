@@ -25,13 +25,14 @@ export default function ConfirmPage() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [promoCode, setPromoCode] = useState<string>("");
 
   const handleConfirm = async () => {
     if (!movieId || !showtime || seats.length === 0) return;
     setLoading(true);
     setError(null);
 
-      try {
+    try {
       const res = await fetch("http://localhost:8080/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -92,6 +93,19 @@ export default function ConfirmPage() {
 
         <h3 className="text-lg font-semibold">Tickets</h3>
         <p className="mb-2">Adult: {adult} • Child: {child} • Senior: {senior}</p>
+
+        <div className="mt-4">
+          <label className="block text-sm font-medium mb-1" htmlFor="promo">Promo Code</label>
+          <input
+            id="promo"
+            name="promo"
+            value={promoCode}
+            onChange={(e) => setPromoCode(e.target.value.slice(0, 6))}
+            placeholder="Enter promo code"
+            maxLength={6}
+            className="w-full max-w-xs rounded-md border border-gray-700 bg-gray-800 px-3 py-2 text-white"
+          />
+        </div>
 
         <div className="border-t border-gray-700 mt-4 pt-4 flex justify-between">
           <span className="font-semibold">Subtotal</span>
