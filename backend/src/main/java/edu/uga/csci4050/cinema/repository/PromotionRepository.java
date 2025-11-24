@@ -5,4 +5,6 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 
 public interface PromotionRepository extends MongoRepository<Promotion, String> {
     boolean existsByCodeIgnoreCase(String code);
+
+    public Promotion findByCode(String code);
 }
