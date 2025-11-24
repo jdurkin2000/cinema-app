@@ -16,32 +16,21 @@ function moviesOverlap(a: Date, b: Date): boolean {
   return startA < endB && startB < endA;
 }
 
-const showroomsDb: Showroom[] = [
-  {
-    id: "a",
-    showtimes: [],
-  },
-  {
-    id: "b",
-    showtimes: [],
-  },
-  {
-    id: "c",
-    showtimes: [],
-  },
-];
+// Note: local in-memory `showroomsDb` removed. All showroom operations
+// now call the backend API at `SHOWROOMS_API` to ensure the frontend
+// uses the live showroom data from the server.
 
 export async function createShowroom(showroom: Showroom): Promise<Showroom> {
-  // Convert Date objects to ISO strings since JSON cannot send Date objects
+  // Convert Date objects to ISO strings so backend parses them correctly
   const payload = {
     ...showroom,
-    showtimes: showroom.showtimes.map((st) => ({
+    showtimes: showroom.showtimes?.map((st) => ({
       ...st,
       start: st.start instanceof Date ? st.start.toISOString() : st.start,
     })),
   };
 
-  const response = await axios.post<Showroom>("/api/showrooms", payload);
+  const response = await axios.post<Showroom>(SHOWROOMS_API, payload);
   return response.data;
 }
 
@@ -50,17 +39,31 @@ export async function createShowroom(showroom: Showroom): Promise<Showroom> {
  * @param movie - The movie object to search showtimes for
  * @returns An array of Showtime objects matching the provided movie
  */
-export function getShowtimesForMovie(movie: Movie): Showtime[] {
-  const showtimes: Showtime[] = [];
-
-  for (const showroom of showroomsDb) {
-    const filtered = showroom.showtimes.filter(
-      (showtime) => showtime.movieId === movie.id
-    );
-    showtimes.push(...filtered);
+/**
+ * Fetch showrooms from backend and return all showtimes for the given movie.
+ */
+export async function getShowtimesForMovie(movie: Movie): Promise<Date[]> {
+  try {
+    const res = await axios.get<Showroom[]>(SHOWROOMS_API);
+    const result: Date[] = [];
+    res.data.forEach((showroom) => {
+      showroom.showtimes?.forEach((st) => {
+        if (st.movieId === movie.id) {
+          // Ensure `start` is a Date on the client
+          const converted: Showtime = {
+            ...st,
+            start:
+              st.start instanceof Date ? st.start : new Date(String(st.start)),
+          };
+          result.push(converted.start);
+        }
+      });
+    });
+    return result;
+  } catch (err) {
+    console.error("Error fetching showtimes for movie:", err);
+    return [];
   }
-
-  return showtimes;
 }
 
 /**
@@ -78,13 +81,21 @@ export function getShowtimesForMovie(movie: Movie): Showtime[] {
  * - Relies on the external `showroomsDb` data source and the `moviesMatch` helper.
  * - This function has no side effects and does not modify `showroomsDb`.
  */
-export function isMovieShowing(movie: Movie): boolean {
-  for (const showroom of showroomsDb) {
-    if (showroom.showtimes.some((showtime) => showtime.movieId === movie.id))
-      return true;
+/**
+ * Returns true if the movie has at least one showroom showtime on the server.
+ */
+export async function isMovieShowing(movie: Movie): Promise<boolean> {
+  try {
+    const res = await axios.get<Showroom[]>(SHOWROOMS_API);
+    for (const showroom of res.data) {
+      if (showroom.showtimes?.some((st) => st.movieId === movie.id))
+        return true;
+    }
+    return false;
+  } catch (err) {
+    console.error("Error checking if movie is showing:", err);
+    return false;
   }
-
-  return false;
 }
 
 /**
@@ -123,52 +134,76 @@ export function isMovieShowing(movie: Movie): boolean {
  * // Schedule a movie in a specific showroom:
  * scheduleMovie(myMovie, new Date('2025-12-01T19:30:00'), 'showroom-123');
  */
-export function scheduleMovie(
+/**
+ * Schedule a movie by adding a showtime to a showroom on the backend.
+ * Returns true on success, false on conflict/error.
+ */
+export async function scheduleMovie(
   movie: Movie,
   date: Date,
   showroomId?: string
-): boolean {
-  const showroom =
-    showroomsDb.find((showroom) => showroom.id === showroomId) ??
-    showroomsDb[0];
+): Promise<boolean> {
+  try {
+    // If showroomId provided, post to that showroom's showtimes endpoint
+    const payload = {
+      movieId: movie.id,
+      start: date.toISOString(),
+      bookedSeats: [],
+    };
 
-  if (
-    showroom.showtimes.some((showtime) => moviesOverlap(date, showtime.start))
-  ) {
+    if (showroomId) {
+      await axios.post<Showroom>(
+        `${SHOWROOMS_API}/${showroomId}/showtimes`,
+        payload
+      );
+      return true;
+    }
+
+    // No showroomId: pick a showroom by fetching list and choosing first that has no overlap
+    const res = await axios.get<Showroom[]>(SHOWROOMS_API);
+    for (const showroom of res.data) {
+      // check overlap by fetching its showtimes
+      const hasOverlap = showroom.showtimes?.some((st) =>
+        moviesOverlap(new Date(String(st.start)), date)
+      );
+      if (!hasOverlap) {
+        await axios.post<Showroom>(
+          `${SHOWROOMS_API}/${showroom.id}/showtimes`,
+          payload
+        );
+        return true;
+      }
+    }
+
+    // no showroom free
+    return false;
+  } catch (err) {
+    console.error("Error scheduling movie:", err);
     return false;
   }
-
-  const newShowtime: Showtime = {
-    movieId: movie.id,
-    start: date,
-    bookedSeats: [],
-  };
-
-  showroom.showtimes.push(newShowtime);
-
-  return true;
 }
 
-export function scheduleMovieWithShowroom(
+export async function scheduleMovieWithShowroom(
   movie: Movie,
   date: Date,
   showroom: Showroom
-): boolean {
-  if (
-    showroom.showtimes.some((showtime) => moviesOverlap(date, showtime.start))
-  ) {
+): Promise<boolean> {
+  try {
+    // Reuse backend endpoint for adding showtime to a specific showroom
+    const payload = {
+      movieId: movie.id,
+      start: date.toISOString(),
+      bookedSeats: [],
+    };
+    await axios.post<Showroom>(
+      `${SHOWROOMS_API}/${showroom.id}/showtimes`,
+      payload
+    );
+    return true;
+  } catch (err) {
+    console.error("Error scheduling movie with showroom:", err);
     return false;
   }
-
-  const newShowtime: Showtime = {
-    movieId: movie.id,
-    start: date,
-    bookedSeats: [],
-  };
-
-  showroom.showtimes.push(newShowtime);
-
-  return true;
 }
 
 /**
@@ -209,56 +244,22 @@ export async function getShowroomMovies(): Promise<{
     const showroomsResponse = await axios.get<Showroom[]>(SHOWROOMS_API);
     const showrooms = showroomsResponse.data;
 
-    // Collect all unique movie IDs and their earliest showtime
-    const movieShowtimes = new Map<string, Date>();
-
+    // Build a set of movie IDs that have at least one scheduled showtime
+    const scheduledMovieIds = new Set<string>();
     showrooms.forEach((showroom) => {
       showroom.showtimes?.forEach((showtime) => {
-        if (showtime.movieId) {
-          const startDate = new Date(showtime.start);
-          const existing = movieShowtimes.get(showtime.movieId);
-
-          // Keep the earliest showtime for each movie
-          if (!existing || startDate < existing) {
-            movieShowtimes.set(showtime.movieId, startDate);
-          }
-        }
+        if (showtime.movieId) scheduledMovieIds.add(showtime.movieId);
       });
     });
-
-    if (movieShowtimes.size === 0) {
-      return { nowShowing: [], upcoming: [] };
-    }
 
     // Fetch all movies from the backend
     const allMoviesResponse = await axios.get<Movie[]>(MOVIES_API);
     const allMovies = allMoviesResponse.data;
 
-    // Filter to only movies scheduled in showrooms
-    const scheduledMovies = allMovies.filter((movie) =>
-      movieShowtimes.has(movie.id)
-    );
-
-    // Categorize based on showtime date vs today
-    const now = new Date();
-    now.setHours(0, 0, 0, 0); // Set to start of today
-
-    const nowShowing: Movie[] = [];
-    const upcoming: Movie[] = [];
-
-    scheduledMovies.forEach((movie) => {
-      const showtime = movieShowtimes.get(movie.id);
-      if (showtime) {
-        const showtimeDate = new Date(showtime);
-        showtimeDate.setHours(0, 0, 0, 0); // Set to start of showtime date
-
-        if (showtimeDate <= now) {
-          nowShowing.push(movie);
-        } else {
-          upcoming.push(movie);
-        }
-      }
-    });
+    // Now: any movie that is scheduled in a showroom is "Now Showing".
+    // All other movies (no scheduled showtime in any showroom) are considered "Upcoming".
+    const nowShowing = allMovies.filter((m) => scheduledMovieIds.has(m.id));
+    const upcoming = allMovies.filter((m) => !scheduledMovieIds.has(m.id));
 
     return { nowShowing, upcoming };
   } catch (error) {

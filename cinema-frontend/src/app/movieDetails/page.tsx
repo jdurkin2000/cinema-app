@@ -1,18 +1,19 @@
 "use client";
 
-
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useMovies } from "@/libs/cinemaApi";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import "./movieDetails.css";
+import { getShowtimesForMovie } from "@/libs/showingsApi";
 
 export default function Home() {
   const params = useSearchParams();
   const movieId = params.get("id");
 
   const { movies, status } = useMovies({ id: movieId || "0" });
+  const [showtimes, setShowtimes] = useState<Date[] | null>(null);
   const [selectedShowtime, setSelectedShowtime] = useState<Date | null>(null);
   const [isShowtimeOpen, setIsShowtimeOpen] = useState(false);
 
@@ -24,6 +25,15 @@ export default function Home() {
   const movie = movies[0];
   const currentState = status.currentState;
   const isLoading = currentState === "Loading";
+
+  useEffect(() => {
+    const fetchShowtimes = async () => {
+      const showings = await getShowtimesForMovie(movie);
+      setShowtimes(showings);
+    };
+
+    fetchShowtimes();
+  }, [movie]);
 
   return (
     <main className="page-container">
@@ -109,7 +119,10 @@ export default function Home() {
           {/* Synopsis */}
           <h2 className="section-title">Synopsis</h2>
           {isLoading ? (
-            <div className="skeleton" style={{ height: "100px", marginTop: "0.75rem" }} />
+            <div
+              className="skeleton"
+              style={{ height: "100px", marginTop: "0.75rem" }}
+            />
           ) : (
             <p className="section-text">{movie?.synopsis}</p>
           )}
@@ -140,9 +153,9 @@ export default function Home() {
                 <span key={i} className="skeleton showtime-btn" />
               ))}
             </div>
-          ) : movie?.showtimes.length ? (
+          ) : showtimes?.length ? (
             <ul className="showtimes-list">
-              {movie.showtimes.map((value: Date, index: number) => (
+              {showtimes.map((value: Date, index: number) => (
                 <li key={index}>
                   <button
                     type="button"
