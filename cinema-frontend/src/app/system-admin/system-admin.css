@@ -1,0 +1,91 @@
+/* Main container */
+.admin-main {
+  min-height: 100vh;
+  background: linear-gradient(to bottom right, #0f172a, #211122, #0f172a);  
+  color: white;
+  padding: 0 1rem;
+}
+
+.admin-wrapper {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 2.5rem 0;
+}
+
+/* Header */
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.header-title {
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+.icon-settings {
+  width: 2rem;
+  height: 2rem;
+}
+
+/* Return button */
+.btn-return-home {
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #d1d5db;
+  text-decoration: none;
+  transition: 0.2s;
+}
+
+.btn-return-home:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+/* Admin Actions Grid */
+.admin-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .admin-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Buttons */
+.btn-admin-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  font-size: 1.125rem;
+  font-weight: 500;
+  border-radius: 0.75rem;
+  background: linear-gradient(to right, #9333ea, #7e22ce);
+  color: white;
+  text-decoration: none;
+  box-shadow: 0 10px 15px rgba(147, 51, 234, 0.3);
+  transition: all 0.3s ease;
+}
+
+.btn-admin-action:hover {
+  background: linear-gradient(to right, #7e22ce, #6b21a8);
+  box-shadow: 0 10px 20px rgba(147, 51, 234, 0.4);
+}
+
+.btn-admin-action:active {
+  transform: scale(0.98);
+}
