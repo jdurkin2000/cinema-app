@@ -2,7 +2,7 @@
 html, body {
   height: 100%;
   margin: 0;
-  background-color: #1d1d1d;
+  background: linear-gradient(to bottom right, #0f172a, #211122, #0f172a);  
 }
 
 /* Search form */
