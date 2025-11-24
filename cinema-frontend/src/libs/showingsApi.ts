@@ -16,10 +16,6 @@ function moviesOverlap(a: Date, b: Date): boolean {
   return startA < endB && startB < endA;
 }
 
-// Note: local in-memory `showroomsDb` removed. All showroom operations
-// now call the backend API at `SHOWROOMS_API` to ensure the frontend
-// uses the live showroom data from the server.
-
 export async function createShowroom(showroom: Showroom): Promise<Showroom> {
   // Convert Date objects to ISO strings so backend parses them correctly
   const payload = {
