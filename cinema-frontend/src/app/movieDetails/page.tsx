@@ -7,18 +7,19 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import "./movieDetails.css";
 import { getShowtimesForMovie } from "@/libs/showingsApi";
+import { Showtime } from "@/models/shows";
 
 export default function Home() {
   const params = useSearchParams();
   const movieId = params.get("id");
 
   const { movies, status } = useMovies({ id: movieId || "0" });
-  const [showtimes, setShowtimes] = useState<Date[] | null>(null);
-  const [selectedShowtime, setSelectedShowtime] = useState<Date | null>(null);
+  const [showtimes, setShowtimes] = useState<Showtime[] | null>(null);
+  const [selectedShowtime, setSelectedShowtime] = useState<Showtime | null>(null);
   const [isShowtimeOpen, setIsShowtimeOpen] = useState(false);
 
-  const onPickShowtime = (time: Date) => {
-    setSelectedShowtime(time);
+  const onPickShowtime = (show: Showtime) => {
+    setSelectedShowtime(show);
     setIsShowtimeOpen(true);
   };
 
@@ -155,15 +156,15 @@ export default function Home() {
             </div>
           ) : showtimes?.length ? (
             <ul className="showtimes-list">
-              {showtimes.map((value: Date, index: number) => (
+              {showtimes.map((showtime: Showtime, index: number) => (
                 <li key={index}>
                   <button
                     type="button"
-                    onClick={() => onPickShowtime(value)}
+                    onClick={() => onPickShowtime(showtime)}
                     className="showtime-btn"
-                    aria-label={`Choose showtime ${value.toLocaleString()}`}
+                    aria-label={`Choose showtime ${showtime.start.toLocaleString()}`}
                   >
-                    {value.toLocaleString()}
+                    {showtime.start.toLocaleString()}
                   </button>
                 </li>
               ))}
@@ -198,7 +199,8 @@ export default function Home() {
                     pathname: "/movieBooking",
                     query: {
                       id: movie?.id,
-                      showtime: selectedShowtime?.toISOString(),
+                      showroomId: selectedShowtime?.roomId,
+                      start: selectedShowtime?.start.toLocaleString()
                     },
                   }}
                   className="modal-btn"

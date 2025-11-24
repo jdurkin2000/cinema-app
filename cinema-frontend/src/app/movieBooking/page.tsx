@@ -1,15 +1,9 @@
 "use client";
 
-// Showroom type based on backend
-interface Showroom {
-  _id: string;
-  showtimes: Array<any>;
-}
-
 import { useSearchParams } from "next/navigation";
-import { formatDateTime, useMovies } from "@/libs/cinemaApi";
+import { formatDateTime, Showroom, useMovies } from "@/libs/cinemaApi";
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 
 // === NEW: HARDCODED UNAVAILABLE SEATS ===
@@ -63,7 +57,8 @@ const rows = [
 export default function Home() {
   const params = useSearchParams();
   const movieId = params.get("id");
-  const showtime = params.get("showtime") || "No showtime found";
+  const roomId = params.get("showroomId") || "No showroom ID found";
+  const start = params.get("start") || "";
 
   const { movies, status } = useMovies({ id: movieId || "0" });
 
@@ -84,29 +79,15 @@ export default function Home() {
   const [selectionError, setSelectionError] = useState<string>("");
 
   // Showroom state
-  const [showrooms, setShowrooms] = useState<Showroom[]>([]);
-  const [showroomName, setShowroomName] = useState<string>("");
+  const [showroom, setShowroom] = useState<Showroom | null>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     // Fetch all showrooms
-    fetch("http://localhost:8080/api/showrooms")
+    fetch(`http://localhost:8080/api/showrooms/${roomId}/showtimes`)
       .then((res) => res.json())
-      .then((data: Showroom[]) => {
-        setShowrooms(data);
-        // Find the showtime object for the selected showtime
-        if (movie && Array.isArray(movie.showtimes)) {
-          const showObj = movie.showtimes.find((s: any) => typeof s === "object" && s.start === showtime && s.roomId);
-          if (showObj && typeof showObj === "object" && "roomId" in showObj) {
-            // Find the showroom with matching _id
-            const showroom = data.find((room) => room._id === showObj.roomId);
-            setShowroomName(showroom ? showroom._id : "");
-          } else {
-            setShowroomName("");
-          }
-        }
-      })
-      .catch(() => setShowrooms([]));
-  }, [movie, showtime]);
+      .then((data: Showroom) => setShowroom(data))
+      .catch(() => setShowroom({id: "error"}));
+  }, [roomId]);
 
   const handleSelectSeat = (seatNumber: string) => {
     // Prevent selection if seat is unavailable
@@ -171,7 +152,9 @@ export default function Home() {
         height={250}
         className="rounded-lg transform hover:scale-110 transition duration-300 active:scale-95"
       />
-      <p className="text-lg">Showtime: {formatDateTime(new Date(showtime))}</p>
+      <p className="text-lg">Showtime: {formatDateTime(new Date(start))}</p>
+
+      <p className="text-lg">Showroom: {showroom?.id}</p>
 
       {/* === TICKET SELECTION SECTION === */}
       <div className="flex flex-col items-center space-y-4 w-full max-w-sm p-4 border border-gray-700 rounded-lg">
@@ -282,7 +265,7 @@ export default function Home() {
           if (selectedSeats.length !== totalTickets || totalTickets === 0) return;
           const params = new URLSearchParams();
           if (movieId) params.set("id", movieId);
-          params.set("showtime", showtime);
+          params.set("showtime", start);
           params.set("seats", selectedSeats.join(","));
           params.set("adult", String(tickets.adult));
           params.set("child", String(tickets.child));

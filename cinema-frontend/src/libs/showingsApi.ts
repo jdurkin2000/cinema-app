@@ -38,10 +38,10 @@ export async function createShowroom(showroom: Showroom): Promise<Showroom> {
 /**
  * Fetch showrooms from backend and return all showtimes for the given movie.
  */
-export async function getShowtimesForMovie(movie: Movie): Promise<Date[]> {
+export async function getShowtimesForMovie(movie: Movie): Promise<Showtime[]> {
   try {
     const res = await axios.get<Showroom[]>(SHOWROOMS_API);
-    const result: Date[] = [];
+    const result: Showtime[] = [];
     res.data.forEach((showroom) => {
       showroom.showtimes?.forEach((st) => {
         if (st.movieId === movie.id) {
@@ -51,7 +51,7 @@ export async function getShowtimesForMovie(movie: Movie): Promise<Date[]> {
             start:
               st.start instanceof Date ? st.start : new Date(String(st.start)),
           };
-          result.push(converted.start);
+          result.push(converted);
         }
       });
     });
