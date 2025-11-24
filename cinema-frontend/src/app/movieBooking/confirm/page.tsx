@@ -26,6 +26,9 @@ export default function ConfirmPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [promoCode, setPromoCode] = useState<string>("");
+  const [appliedPromo, setAppliedPromo] = useState<{ code: string; discountPercent: number } | null>(null);
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [promoError, setPromoError] = useState<string | null>(null);
 
   const handleConfirm = async () => {
     if (!movieId || !showtime || seats.length === 0) return;
@@ -36,7 +39,7 @@ export default function ConfirmPage() {
       const res = await fetch("http://localhost:8080/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ movieId, start: showtime, seats }),
+        body: JSON.stringify({ movieId, start: showtime, seats, promoCode: appliedPromo?.code ?? null }),
       });
 
       if (!res.ok) {
@@ -58,6 +61,7 @@ export default function ConfirmPage() {
         seats,
         tickets: { adult, child, senior },
         subtotal,
+        promo: appliedPromo ? { code: appliedPromo.code, discountPercent: appliedPromo.discountPercent } : null,
         confirmedAt: new Date().toISOString(),
         backendShowroom: saved.id,
       };
@@ -96,20 +100,82 @@ export default function ConfirmPage() {
 
         <div className="mt-4">
           <label className="block text-sm font-medium mb-1" htmlFor="promo">Promo Code</label>
-          <input
-            id="promo"
-            name="promo"
-            value={promoCode}
-            onChange={(e) => setPromoCode(e.target.value.slice(0, 6))}
-            placeholder="Enter promo code"
-            maxLength={6}
-            className="w-full max-w-xs rounded-md border border-gray-700 bg-gray-800 px-3 py-2 text-white"
-          />
+          <div className="flex items-center gap-2">
+            <input
+              id="promo"
+              name="promo"
+              value={promoCode}
+              onChange={(e) => setPromoCode(e.target.value.slice(0, 12))}
+              placeholder="Enter promo code"
+              maxLength={12}
+              className="w-full max-w-xs rounded-md border border-gray-700 bg-gray-800 px-3 py-2 text-white"
+            />
+            <button
+              className="bg-blue-600 hover:bg-blue-700 px-3 py-2 rounded text-sm"
+              onClick={async () => {
+                if (!promoCode.trim()) return;
+                setPromoLoading(true);
+                setPromoError(null);
+                try {
+                  const res = await fetch(`http://localhost:8080/api/promotions/validate?code=${encodeURIComponent(promoCode.trim())}`);
+                  if (!res.ok) {
+                    if (res.status === 404) {
+                      setPromoError("Promo code not found");
+                    } else {
+                      const t = await res.text();
+                      setPromoError(t || `Error ${res.status}`);
+                    }
+                    setAppliedPromo(null);
+                    setPromoLoading(false);
+                    return;
+                  }
+                  const promo = await res.json();
+                  setAppliedPromo({ code: promo.code, discountPercent: promo.discountPercent });
+                } catch (err: any) {
+                  console.error(err);
+                  setPromoError("Failed to validate promo code");
+                  setAppliedPromo(null);
+                } finally {
+                  setPromoLoading(false);
+                }
+              }}
+            >
+              {promoLoading ? "Checking..." : "Apply"}
+            </button>
+            {appliedPromo && (
+              <button
+                className="bg-gray-600 hover:bg-gray-500 px-3 py-2 rounded text-sm"
+                onClick={() => {
+                  setAppliedPromo(null);
+                  setPromoCode("");
+                  setPromoError(null);
+                }}
+              >
+                Remove
+              </button>
+            )}
+          </div>
+          {promoError && <p className="text-red-400 text-sm mt-1">{promoError}</p>}
+          {appliedPromo && (
+            <p className="text-green-400 text-sm mt-1">Applied: {appliedPromo.code} — {appliedPromo.discountPercent}% off</p>
+          )}
         </div>
 
-        <div className="border-t border-gray-700 mt-4 pt-4 flex justify-between">
-          <span className="font-semibold">Subtotal</span>
-          <span className="font-bold">${subtotal.toFixed(2)}</span>
+        <div className="border-t border-gray-700 mt-4 pt-4">
+          <div className="flex justify-between">
+            <span className="font-semibold">Subtotal</span>
+            <span className="font-bold">${subtotal.toFixed(2)}</span>
+          </div>
+          {appliedPromo && (
+            <div className="flex justify-between mt-2">
+              <span className="text-sm">Discount ({appliedPromo.discountPercent}%)</span>
+              <span className="text-sm">-${((subtotal * appliedPromo.discountPercent) / 100).toFixed(2)}</span>
+            </div>
+          )}
+          <div className="flex justify-between mt-3 font-semibold">
+            <span>Total</span>
+            <span className="font-bold">${(appliedPromo ? (subtotal * (1 - appliedPromo.discountPercent / 100)) : subtotal).toFixed(2)}</span>
+          </div>
         </div>
       </div>
 
