@@ -132,6 +132,16 @@ export default function ScheduleMoviePage() {
 
     const newStart = new Date(state.selectedTime);
 
+    // Prevent scheduling a showtime in the past
+    const now = new Date();
+    if (newStart.getTime() <= now.getTime()) {
+      setState((prev) => ({
+        ...prev,
+        error: "Cannot schedule a showtime in the past. Please choose a future date and time.",
+      }));
+      return;
+    }
+
     // Conflict window: 5 hours before/after existing showtime are considered conflicting.
     const HOURS_BUFFER = 5;
     const msInHour = 1000 * 60 * 60;
