@@ -65,7 +65,7 @@ public class BookingController {
                     }
                     Set<String> merged = new HashSet<>(existingSet);
                     if (req.seats() != null) merged.addAll(Arrays.asList(req.seats()));
-                    Showtime updated = new Showtime(st.movieId(), st.start(), merged.toArray(new String[0]));
+                    Showtime updated = new Showtime(st.movieId(), st.start(), merged.toArray(new String[0]), showroom.getId());
                     sts.set(i, updated);
                     showroom.setShowtimes(sts);
                     Showroom saved = showroomRepository.save(showroom);

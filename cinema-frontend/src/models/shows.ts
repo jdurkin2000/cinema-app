@@ -7,4 +7,5 @@ export interface Showtime {
     movieId: string;
     start: Date;
     bookedSeats: string[];
+    roomId: string;
 }
