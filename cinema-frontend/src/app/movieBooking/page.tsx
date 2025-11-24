@@ -242,8 +242,23 @@ export default function Home() {
         </p>
       </div>
 
-      <button className="bg-purple-500 hover:bg-purple-600 transition-colors rounded-2xl px-4 py-2 text-2xl"
-        disabled={selectedSeats.length !== totalTickets || totalTickets === 0}>
+      <button
+        className="bg-purple-500 hover:bg-purple-600 transition-colors rounded-2xl px-4 py-2 text-2xl"
+        disabled={selectedSeats.length !== totalTickets || totalTickets === 0}
+        onClick={() => {
+          if (selectedSeats.length !== totalTickets || totalTickets === 0) return;
+          const params = new URLSearchParams();
+          if (movieId) params.set("id", movieId);
+          params.set("showtime", showtime);
+          params.set("seats", selectedSeats.join(","));
+          params.set("adult", String(tickets.adult));
+          params.set("child", String(tickets.child));
+          params.set("senior", String(tickets.senior));
+
+          // Navigate to confirmation page with booking details in query
+          window.location.href = `/movieBooking/confirm?${params.toString()}`;
+        }}
+      >
         Continue to checkout
       </button>
 
