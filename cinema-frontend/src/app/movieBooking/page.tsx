@@ -1,5 +1,11 @@
 "use client";
 
+// Showroom type based on backend
+interface Showroom {
+  _id: string;
+  showtimes: Array<any>;
+}
+
 import { useSearchParams } from "next/navigation";
 import { formatDateTime, useMovies } from "@/libs/cinemaApi";
 import Link from "next/link";
@@ -61,6 +67,8 @@ export default function Home() {
 
   const { movies, status } = useMovies({ id: movieId || "0" });
 
+  const movie = movies[0];
+
   // === STATE FOR TICKET QUANTITIES ===
   const [tickets, setTickets] = useState({
     adult: 0,
@@ -74,6 +82,31 @@ export default function Home() {
   // State to track selected seats
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
   const [selectionError, setSelectionError] = useState<string>("");
+
+  // Showroom state
+  const [showrooms, setShowrooms] = useState<Showroom[]>([]);
+  const [showroomName, setShowroomName] = useState<string>("");
+
+  React.useEffect(() => {
+    // Fetch all showrooms
+    fetch("http://localhost:8080/api/showrooms")
+      .then((res) => res.json())
+      .then((data: Showroom[]) => {
+        setShowrooms(data);
+        // Find the showtime object for the selected showtime
+        if (movie && Array.isArray(movie.showtimes)) {
+          const showObj = movie.showtimes.find((s: any) => typeof s === "object" && s.start === showtime && s.roomId);
+          if (showObj && typeof showObj === "object" && "roomId" in showObj) {
+            // Find the showroom with matching _id
+            const showroom = data.find((room) => room._id === showObj.roomId);
+            setShowroomName(showroom ? showroom._id : "");
+          } else {
+            setShowroomName("");
+          }
+        }
+      })
+      .catch(() => setShowrooms([]));
+  }, [movie, showtime]);
 
   const handleSelectSeat = (seatNumber: string) => {
     // Prevent selection if seat is unavailable
@@ -126,7 +159,7 @@ export default function Home() {
     });
   };
 
-  const movie = movies[0];
+  // removed duplicate
 
   return (
     <div className="flex flex-col font-sans items-center justify-center space-y-6 min-h-screen bg-black text-white p-4">

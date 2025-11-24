@@ -13,6 +13,8 @@ import {
 export default function Home() {
   const [nowShowingMovies, setNowShowingMovies] = useState<Movie[]>([]);
   const [upcomingMovies, setUpcomingMovies] = useState<Movie[]>([]);
+  const [nameQuery, setNameQuery] = useState<string>("");
+  const [genresQuery, setGenresQuery] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,21 +42,28 @@ export default function Home() {
 
   return (
     <div className="content">
-      <form className="movie-search-form" onSubmit={() => {}}>
+      <form
+        className="movie-search-form"
+        onSubmit={(e) => {
+          e.preventDefault();
+        }}
+      >
         <input
           className="movie-search-input"
           type="text"
           placeholder="Enter a movie"
-          disabled
+          value={nameQuery}
+          onChange={(e) => setNameQuery(e.target.value)}
         />
         <input
           className="movie-search-input"
           type="text"
-          placeholder="Enter any amount of genres"
-          disabled
+          placeholder="Enter any amount of genres (comma separated)"
+          value={genresQuery}
+          onChange={(e) => setGenresQuery(e.target.value)}
         />
-        <button className="movie-search-submit" type="submit" disabled>
-          Submit
+        <button className="movie-search-submit" type="submit">
+          Search
         </button>
       </form>
 
@@ -65,10 +74,10 @@ export default function Home() {
       ) : (
         <>
           <p className="now-showing">Now Showing</p>
-          {getMovieList(nowShowingMovies)}
+          {getMovieList(filterMovies(nowShowingMovies, nameQuery, genresQuery))}
 
           <div className="now-showing">Upcoming</div>
-          {getMovieList(upcomingMovies)}
+          {getMovieList(filterMovies(upcomingMovies, nameQuery, genresQuery))}
         </>
       )}
     </div>
@@ -93,4 +102,20 @@ function getMovieList(movies: Movie[]): ReactElement {
       ))}
     </ol>
   );
+}
+
+function filterMovies(movies: Movie[], nameQuery: string, genresQuery: string) {
+  const name = nameQuery.trim().toLowerCase();
+  const genreParts = genresQuery
+    .split(",")
+    .map((g) => g.trim().toLowerCase())
+    .filter((g) => g.length > 0);
+
+  return movies.filter((m) => {
+    const matchesName = name.length === 0 || m.title.toLowerCase().includes(name);
+    const matchesGenres =
+      genreParts.length === 0 ||
+      genreParts.every((g) => m.genres.map((gg) => gg.toLowerCase()).some((gg) => gg.includes(g)));
+    return matchesName && matchesGenres;
+  });
 }

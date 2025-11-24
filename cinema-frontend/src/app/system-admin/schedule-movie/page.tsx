@@ -132,20 +132,21 @@ export default function ScheduleMoviePage() {
 
     const newStart = new Date(state.selectedTime);
 
-    const sameCalendarDate = (a: Date, b: Date) =>
-      a.getFullYear() === b.getFullYear() &&
-      a.getMonth() === b.getMonth() &&
-      a.getDate() === b.getDate();
+    // Conflict window: 5 hours before/after existing showtime are considered conflicting.
+    const HOURS_BUFFER = 5;
+    const msInHour = 1000 * 60 * 60;
 
     const hasConflict = showroom.showtimes.some((st) => {
       const existing = new Date(st.start);
-      return sameCalendarDate(existing, newStart);
+      const diffMs = Math.abs(existing.getTime() - newStart.getTime());
+      const diffHours = diffMs / msInHour;
+      return diffHours < HOURS_BUFFER; // conflict if within 5 hours
     });
 
     if (hasConflict) {
       setState((prev) => ({
         ...prev,
-        error: `A showtime is already scheduled in Showroom ${showroom.id} on the selected date. Please choose a different date.`,
+        error: `A showtime is already scheduled in Showroom ${showroom.id} within ${HOURS_BUFFER} hours of the selected time. Please choose a different time.`,
       }));
       return;
     }
@@ -246,9 +247,8 @@ export default function ScheduleMoviePage() {
               state.showrooms.map((showroom) => (
                 <button
                   key={showroom.id}
-                  className={`showroom-card ${
-                    state.selectedShowroomId === showroom.id ? "active" : ""
-                  }`}
+                  className={`showroom-card ${state.selectedShowroomId === showroom.id ? "active" : ""
+                    }`}
                   onClick={() => handleShowroomSelect(showroom.id)}
                 >
                   <div className="showroom-id">Showroom {showroom.id}</div>
@@ -272,9 +272,8 @@ export default function ScheduleMoviePage() {
                 {state.movies.map((movie) => (
                   <button
                     key={movie.id}
-                    className={`movie-card ${
-                      state.selectedMovieId === movie.id ? "active" : ""
-                    }`}
+                    className={`movie-card ${state.selectedMovieId === movie.id ? "active" : ""
+                      }`}
                     onClick={() => handleMovieSelect(movie.id)}
                   >
                     <img src={movie.poster} alt={movie.title} />
