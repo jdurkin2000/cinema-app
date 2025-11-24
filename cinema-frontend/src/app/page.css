@@ -1,50 +1,125 @@
+/* Global styles */
 html, body {
-  height: 100%;          /* ensure they stretch the full viewport */
-  margin: 0;             /* remove default margins */
-  background-color: #313131; /* choose any color */
+  height: 100%;
+  margin: 0;
+  background-color: #1d1d1d;
 }
 
-
-.topnav {
+/* Search form */
+.movie-search-form {
   display: flex;
+  gap: 0.75rem;
   align-items: center;
-  position: fixed;
-  top: 0;
-  width: 100%;
-  height: 8vh;
-  background: linear-gradient(to bottom, #5400bb  50%, #7300ff  50%);;
-  padding: 0 20px;
-  z-index: 1000;
+  margin: 1rem auto;       /* center horizontally */
+  max-width: 600px;        /* fixed width */
 }
 
-.nav-links {
-  margin-left: auto;
-  display: flex;
-  gap: 20px;
+/* Search inputs */
+.movie-search-input {
+  flex: 1;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  background-color: rgba(255,255,255,0.05);
+  color: #fdffe8;
+  outline: none;
+  transition: all 0.3s;
 }
 
-.nav-links a {
+.movie-search-input::placeholder {
+  color: rgba(255,255,255,0.6);
+}
+
+.movie-search-input:focus {
+  border-color: #550786;
+  box-shadow: 0 0 6px rgba(85,7,134,0.5);
+  background-color: rgba(255,255,255,0.1);
+}
+
+/* Submit button */
+.movie-search-submit {
+  background: #8e2de2;
+  border-radius: 1rem;
+  padding: 0.25rem 1rem;
   color: white;
-  text-decoration: none;
-  font-size: 3vh;
-  padding: 8px 12px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s;
 }
 
-.content {
-  margin-top: 90px; /* 60 + 30 */
-  padding: 20px;
+.movie-search-submit:hover {
+  background: #a64bf9;
+  transform: scale(1.05);
 }
 
-.now-showing{
-  font-size: 3.50vh;
+/* Filter display below search form */
+.filter-display {
+  display: flex;
+  flex-wrap: wrap;             /* wrap long filters onto multiple lines */
+  gap: 0.5rem;
+  margin: 0.5rem auto 1rem auto; /* spacing below search bar */
+  max-width: 600px;            /* match search form width */
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.75rem;
+  background: rgba(36,0,70,0.5); /* frosted purple */
+  backdrop-filter: blur(6px);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  color: #fdffe8;
+  font-weight: 500;
+  white-space: normal;          /* wrap text naturally */
 }
 
-.nav-logo{
-  height: 70%;
-  width: auto;
+/* Remove filters button */
+.remove-filters-button {
+  margin-left: auto;           /* push to right end */
+  background: #8e2de2;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
 }
 
-.title{
-  font-size: 3vh;
-  font-style: bold;
+.remove-filters-button:hover {
+  background: #a64bf9;
+}
+
+
+
+
+/* Movie list styling */
+.movie-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem; /* space-x-5 space-y-5 */
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0 0;
+}
+
+.movie-list li {
+  cursor: pointer;
+}
+
+/* Movie poster styling */
+.movie-poster {
+  border-radius: 0.5rem; /* rounded-lg */
+  transition: transform 0.3s;
+}
+
+.movie-poster:hover {
+  transform: scale(1.10);
+}
+
+.movie-poster:active {
+  transform: scale(0.95);
+}
+
+/* Now Showing / Upcoming text */
+.now-showing {
+  font-size: 3.5vh;
+  font-weight: 600;
+  margin-top: 1rem;
 }
