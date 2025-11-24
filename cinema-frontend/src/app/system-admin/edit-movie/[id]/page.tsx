@@ -41,8 +41,7 @@ export default function EditMoviePage() {
   // Using the imported Showroom type
   const [allShowrooms, setAllShowrooms] = useState<Showroom[]>([]);
   const [currentShowtimes, setCurrentShowtimes] = useState<ShowtimeEntry[]>([]);
-  const [newShowtime, setNewShowtime] = useState("");
-  const [newShowroomName, setNewShowroomName] = useState("");
+  // Note: Adding new showtimes is disabled on this page.
 
   // --- 3. List Text Inputs ---
   const [genresText, setGenresText] = useState("");
@@ -94,10 +93,7 @@ export default function EditMoviePage() {
           })
         );
 
-        // Initialize new showroom selection
-        if (showroomsResponse.length > 0) {
-          setNewShowroomName(showroomsResponse[0].name);
-        }
+        // ...existing initialization complete
 
         setLoaded(true);
       } catch (err: any) {
@@ -121,21 +117,7 @@ export default function EditMoviePage() {
     setMovieData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const addShowtimeEntry = (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (!newShowtime.trim() || !newShowroomName.trim()) {
-      return setError("Both showtime time and showroom must be selected.");
-    }
-
-    const newEntry: ShowtimeEntry = {
-      id: Date.now(),
-      time: newShowtime.trim(),
-      showroomName: newShowroomName,
-    };
-
-    setCurrentShowtimes([...currentShowtimes, newEntry]);
-    setNewShowtime("");
-  };
+  // Adding new showtimes has been removed from this page.
 
   const removeShowtimeEntry = (id: number) => {
     setCurrentShowtimes(currentShowtimes.filter((st) => st.id !== id));
@@ -444,49 +426,7 @@ export default function EditMoviePage() {
             )}
           </div>
 
-          {/* Add New Showtime/Showroom Form */}
-          <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] pt-4 border-t border-gray-200">
-            <div className="w-full">
-              <label className="block text-xs font-medium text-gray-700">Showtime (Date/Time)</label>
-              <input
-                type="datetime-local"
-                className="mt-1 w-full rounded-md border border-gray-300 px-4 py-2 text-sm"
-                value={newShowtime}
-                onChange={(e) => setNewShowtime(e.target.value)}
-              />
-            </div>
-
-            <div className="w-full">
-              <label className="block text-xs font-medium text-gray-700">Select Showroom</label>
-              <select
-                className="mt-1 w-full rounded-md border border-gray-300 px-4 py-2 text-sm"
-                value={newShowroomName}
-                onChange={(e) => setNewShowroomName(e.target.value)}
-                disabled={allShowrooms.length === 0}
-              >
-                {allShowrooms.length > 0 ? (
-                  allShowrooms.map((room) => (
-                    <option key={room.id} value={room.name}>
-                      {room.name}
-                    </option>
-                  ))
-                ) : (
-                  <option value="">(No Showrooms Found)</option>
-                )}
-              </select>
-            </div>
-
-            <div className="pt-5">
-              <button
-                type="button"
-                onClick={addShowtimeEntry}
-                disabled={!newShowtime.trim() || !newShowroomName.trim() || allShowrooms.length === 0}
-                className="w-full rounded-md bg-green-600 px-4 py-2 text-white text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition"
-              >
-                Add
-              </button>
-            </div>
-          </div>
+          {/* Adding new showtimes removed: use the Schedule Movie page to create showtimes. */}
         </div>
 
 
