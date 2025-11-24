@@ -78,20 +78,25 @@ export default function EditMoviePage() {
         setCastText(movieResponse.cast?.join(", ") || "");
         setReviewsText(movieResponse.reviews?.join(", ") || "");
 
-        // Map existing showtimes (which are now Date objects due to dateReviver) to structured entries
-        setCurrentShowtimes(
-          (movieResponse.showtimes || []).map((time: string | Date, index: number) => {
-            // Convert Date object back to ISO string if necessary
-            const timeString = time instanceof Date ? time.toISOString() : time;
-
-            return {
-              id: index + 1,
-              // Truncate to YYYY-MM-DDTHH:MM format required by datetime-local input
-              time: timeString.substring(0, 16),
-              showroomName: "Existing Showtime", // Placeholder label for existing times
-            };
-          })
-        );
+        // Map existing showtimes from the showrooms collection for this movie
+        const showtimeEntries: ShowtimeEntry[] = [];
+        showroomsResponse.forEach((room) => {
+          (room.showtimes || []).forEach((st: any, idx: number) => {
+            if (!st) return;
+            // st.movieId may be an ObjectId string; compare as strings
+            if (String(st.movieId) === String(movieId)) {
+              const startIso = st.start instanceof Date ? st.start.toISOString() : String(st.start);
+              showtimeEntries.push({
+                id: Date.now() + showtimeEntries.length,
+                time: startIso.substring(0, 16),
+                showroomName: room.name || room.id || "Unnamed Showroom",
+              });
+            }
+          });
+        });
+        // Sort by time ascending
+        showtimeEntries.sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0));
+        setCurrentShowtimes(showtimeEntries);
 
         // ...existing initialization complete
 
