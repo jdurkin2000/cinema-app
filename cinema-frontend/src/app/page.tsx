@@ -10,6 +10,7 @@ import { FormEvent, ReactElement, useState, useEffect } from "react";
 import Link from "next/link";
 // Import the *correct* auth store functions
 import { getToken, clearToken } from "@/libs/authStore";
+import { scheduleMovie } from "@/libs/showingsApi";
 
 /**
  * Decodes a JWT token to get the payload.
@@ -195,5 +196,14 @@ function getMovieList(movies: Movie[]): ReactElement {
       })}
     </ol>
   );
+}
+
+function populateShowrooms(movies: Movie[]) {
+  const showroomids = ["a", "b", "c"];
+  let currentId = 0;
+
+  movies.forEach(movie => {
+    scheduleMovie(movie, movie.showtimes[0], showroomids[currentId++]);
+  });
 }
 

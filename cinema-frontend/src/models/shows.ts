@@ -8,4 +8,5 @@ export interface Showroom {
 export interface Showtime {
     movie: Movie;
     start: Date;
+    bookedSeats: string[];
 }
