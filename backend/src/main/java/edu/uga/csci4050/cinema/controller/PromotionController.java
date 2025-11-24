@@ -19,6 +19,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/promotions")
+@CrossOrigin(origins = "http://localhost:3000")
 public class PromotionController {
 
     private final PromotionRepository promotions;
@@ -38,6 +39,30 @@ public class PromotionController {
         List<Promotion> allPromos = promotions.findAll();
 
         return HttpUtils.buildResponseEntity(allPromos, "No promotions in database");
+    }
+
+    /**
+     * Validate a promo code and return the promotion if it's currently valid.
+     * Example: GET /api/promotions/validate?code=ABC123
+     */
+    @GetMapping("/validate")
+    public ResponseEntity<?> validateCode(@RequestParam("code") String code) {
+        if (code == null || code.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Promo code is required"));
+        }
+
+        Promotion p = promotions.findByCode(code.trim());
+        if (p == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Promo not found"));
+        }
+
+        var today = LocalDate.now();
+        if (p.getStartDate() != null && p.getEndDate() != null
+                && (today.isBefore(p.getStartDate()) || today.isAfter(p.getEndDate()))) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Promo is not currently valid"));
+        }
+
+        return ResponseEntity.ok(p);
     }
 
     /**
