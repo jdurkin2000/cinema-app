@@ -64,6 +64,11 @@ export default function AdminPage() {
           <Link href="/system-admin/manage-users" className={buttonStyle}>
             <span>Manage Accounts</span>
           </Link>
+          <Link href="/system-admin/promotions" className={buttonStyle}>
+            <span>Manage Promotions</span>
+          </Link>
+
+
         </section>
       </div>
     </main>

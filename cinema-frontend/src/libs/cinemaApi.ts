@@ -272,3 +272,82 @@ export async function createMovie(
 
   }
 }
+
+// ------- Promotions (Admin) -------
+
+export type Promotion = {
+  id: string;
+  code: string;
+  startDate: string;
+  endDate: string;
+  discountPercent: number;
+};
+
+export type CreatePromotionPayload = {
+  code: string;
+  startDate: string;      // "yyyy-mm-dd"
+  endDate: string;        // "yyyy-mm-dd"
+  discountPercent: number;
+};
+
+const promoApiBase = "http://localhost:8080/api/promotions";
+
+/**
+ * Create a new promotion (Admin only).
+ * Validates on the backend: code, dates, discount%.
+ */
+export async function createPromotion(
+  payload: CreatePromotionPayload,
+  opts?: { token?: string }
+): Promise<Promotion> {
+  try {
+    // Prefer explicit token, fallback to localStorage (client-side)
+    const token =
+      opts?.token ??
+      (typeof window !== "undefined" ? localStorage.getItem("authToken") : null);
+
+    const res = await axios.post<Promotion>(promoApiBase, payload, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+
+    return res.data;
+  } catch (err: any) {
+    const info = buildError(err);
+
+    type JsError = InstanceType<typeof globalThis.Error>;
+    const e: JsError & { status?: number } = new globalThis.Error(info.message);
+    e.status = info.status ?? undefined;
+    throw e;
+  }
+}
+
+/**
+ * Send an existing promotion to subscribed users only.
+ */
+export async function sendPromotion(
+  promotionId: string,
+  opts?: { token?: string }
+): Promise<{ promotionId: string; emailsSent: number }> {
+  try {
+    const token =
+      opts?.token ??
+      (typeof window !== "undefined" ? localStorage.getItem("authToken") : null);
+
+    const res = await axios.post<{ promotionId: string; emailsSent: number }>(
+      `${promoApiBase}/${promotionId}/send`,
+      {},
+      {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      }
+    );
+
+    return res.data;
+  } catch (err: any) {
+    const info = buildError(err);
+
+    type JsError = InstanceType<typeof globalThis.Error>;
+    const e: JsError & { status?: number } = new globalThis.Error(info.message);
+    e.status = info.status ?? undefined;
+    throw e;
+  }
+}
