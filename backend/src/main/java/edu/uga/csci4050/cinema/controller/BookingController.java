@@ -29,51 +29,37 @@ public class BookingController {
 
     @PostMapping
     public ResponseEntity<Showroom> bookSeats(@RequestBody BookingRequest req) {
-        LocalDateTime start;
-        try {
-            // Try parsing a plain LocalDateTime first
-            start = LocalDateTime.parse(req.start());
-        } catch (Exception ex1) {
-            try {
-                // Try OffsetDateTime (handles trailing Z or offsets) then convert
-                start = java.time.OffsetDateTime.parse(req.start()).toLocalDateTime();
-            } catch (Exception ex2) {
-                try {
-                    // Try Instant -> LocalDateTime at system zone
-                    start = java.time.Instant.parse(req.start()).atZone(java.time.ZoneId.systemDefault()).toLocalDateTime();
-                } catch (Exception ex3) {
-                    return ResponseEntity.badRequest().build();
-                }
+        Showroom showroom = showroomRepository.findById(req.showtime().roomId()).orElseThrow();
+        Showtime st = req.showtime();
+
+        String[] existing = st.bookedSeats() == null ? new String[0] : st.bookedSeats();
+        Set<String> existingSet = new HashSet<>(Arrays.asList(existing));
+
+        // If any requested seat is already booked, return conflict
+        for (String seat : req.seats()) {
+            if (existingSet.contains(seat)) {
+                return ResponseEntity.status(409).build();
             }
         }
 
-        List<Showroom> showrooms = showroomRepository.findAll();
-        for (Showroom showroom : showrooms) {
-            List<Showtime> sts = showroom.getShowtimes();
-            for (int i = 0; i < sts.size(); i++) {
-                Showtime st = sts.get(i);
-                if (st.movieId().equals(req.movieId()) && st.start().equals(start)) {
-                    String[] existing = st.bookedSeats() == null ? new String[0] : st.bookedSeats();
-                    Set<String> existingSet = new HashSet<>(Arrays.asList(existing));
-                    // If any requested seat is already booked, return conflict
-                    if (req.seats() != null) {
-                        for (String seat : req.seats()) {
-                            if (existingSet.contains(seat)) {
-                                return ResponseEntity.status(409).build();
-                            }
-                        }
-                    }
-                    Set<String> merged = new HashSet<>(existingSet);
-                    if (req.seats() != null) merged.addAll(Arrays.asList(req.seats()));
-                    Showtime updated = new Showtime(st.movieId(), st.start(), merged.toArray(new String[0]), showroom.getId());
-                    sts.set(i, updated);
-                    showroom.setShowtimes(sts);
-                    Showroom saved = showroomRepository.save(showroom);
-                    return ResponseEntity.ok(saved);
-                }
+        Set<String> merged = new HashSet<>(existingSet);
+        List<Showtime> showtimes = showroom.getShowtimes();
+     
+        merged.addAll(Arrays.asList(req.seats()));
+
+        Showtime updated = new Showtime(st.movieId(), st.start(), merged.toArray(new String[0]), st.roomId());
+
+        boolean found = false;
+        for (int i = 0; i < showtimes.size(); i++) {
+            if (showtimes.get(i).start().equals(updated.start())) {
+                showtimes.set(i, updated);
+                found = true;
             }
         }
+        if (!found)
+            return ResponseEntity.notFound().build();
 
-        return ResponseEntity.notFound().build();
+        Showroom saved = showroomRepository.save(showroom);
+        return ResponseEntity.ok(saved);
     }
 }

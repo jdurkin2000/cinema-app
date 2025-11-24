@@ -6,7 +6,6 @@ import Movie from "@/models/movie";
 import { Showroom, Showtime } from "@/models/shows";
 import { useMovies } from "@/libs/cinemaApi";
 import "./schedule-movie.css";
-import Image from "next/image";
 
 const showroomsApiBase = "http://localhost:8080/api/showrooms";
 
