@@ -203,7 +203,7 @@ export default function EditMoviePage() {
   }
 
   return (
-    <main className="max-w-4xl mx-auto p-8 bg-white shadow-lg rounded-lg">
+    <main className="max-w-4xl mx-auto p-8 bg-white shadow-lg rounded-lg text-gray-900">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-800">Edit Movie: {movieData.title}</h1>
         <button
@@ -302,18 +302,7 @@ export default function EditMoviePage() {
             />
           </div>
 
-          <div className="flex items-center gap-3 pt-6">
-            <input
-              id="upcoming"
-              type="checkbox"
-              className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-              checked={movieData.upcoming ?? true}
-              onChange={(e) => handleInputChange("upcoming", e.target.checked)}
-            />
-            <label htmlFor="upcoming" className="text-sm font-medium text-gray-700">
-              Is Upcoming?
-            </label>
-          </div>
+          {/* 'Is Upcoming' flag removed from Edit Movie page. Managed via Schedule/Backend. */}
         </div>
 
         {/* Synopsis */}
