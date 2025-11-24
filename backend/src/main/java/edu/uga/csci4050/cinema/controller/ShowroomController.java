@@ -26,5 +26,7 @@ public class ShowroomController {
     }
 
     @PostMapping
-    public Showroom saveShowrooms(@RequestBody )
+    public Showroom saveShowrooms(@RequestBody Showroom showroom) {
+        return showroomRepository.save(showroom);
+    }
 }
