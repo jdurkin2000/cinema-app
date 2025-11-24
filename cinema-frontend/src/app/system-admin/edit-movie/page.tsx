@@ -85,7 +85,7 @@ export default function EditMovieListPage() {
                 )}
               </div>
               <div className="p-4">
-                <h2 className="text-lg font-semibold mb-2 line-clamp-2">{movie.title}</h2>
+                <h2 className="text-lg font-semibold mb-2 line-clamp-2 text-black">{movie.title}</h2>
                 <p className="text-sm text-gray-600 mb-2">{movie.rating}</p>
                 <p className="text-xs text-gray-500 line-clamp-3">{movie.synopsis || "No description"}</p>
               </div>
