@@ -182,7 +182,7 @@ export default function ConfirmPage() {
       <div className="flex gap-4">
         <button
           className="bg-green-600 hover:bg-green-700 px-5 py-2 rounded text-lg"
-          onClick={handleConfirm}
+          onClick={() => router.push('/coming-soon')}
           disabled={seats.length === 0}
         >
           Confirm Booking
