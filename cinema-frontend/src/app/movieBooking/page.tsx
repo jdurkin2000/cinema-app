@@ -6,23 +6,37 @@ import Link from "next/link";
 import React, { useState } from "react";
 import Image from "next/image";
 
+// === NEW: HARDCODED UNAVAILABLE SEATS ===
+const UNAVAILABLE_SEATS = ["C4", "C5", "D2"];
+// ========================================
+
 // Define the props for a single seat
 interface SeatProps {
   seatNumber: string;
   isSelected: boolean;
+  isUnavailable: boolean; // NEW PROP
   onSelect: (seatNumber: string) => void;
 }
 
 //Single Seat
-const Seat: React.FC<SeatProps> = ({ seatNumber, isSelected, onSelect }) => {
-  const seatClass = isSelected
-    ? "bg-purple-500 text-white" // Selected seat style
-    : "bg-gray-600 hover:bg-gray-500"; // Available seat style
+const Seat: React.FC<SeatProps> = ({ seatNumber, isSelected, isUnavailable, onSelect }) => {
+  let seatClass = "";
+
+  if (isUnavailable) {
+    seatClass = "bg-red-700 cursor-not-allowed"; // Unavailable seat style (darker red for contrast)
+  } else if (isSelected) {
+    seatClass = "bg-purple-500 text-white"; // Selected seat style
+  } else {
+    seatClass = "bg-gray-600 hover:bg-gray-500 cursor-pointer transition-all duration-200 hover:scale-110"; // Available seat style
+  }
+
+  // Determine the handler: only call onSelect if the seat is NOT unavailable
+  const handleClick = isUnavailable ? () => { } : () => onSelect(seatNumber);
 
   return (
     <div
-      onClick={() => onSelect(seatNumber)}
-      className={`w-8 h-7 flex items-center justify-center rounded-t-lg cursor-pointer transition-all duration-200 hover:scale-110 ${seatClass}`}
+      onClick={handleClick}
+      className={`w-8 h-7 flex items-center justify-center rounded-t-lg ${seatClass}`}
     >
       <span className="text-xs">{seatNumber.substring(1)}</span>
     </div>
@@ -44,22 +58,71 @@ export default function Home() {
   const params = useSearchParams();
   const movieId = params.get("id");
   const showtime = params.get("showtime") || "No showtime found";
-  const receivedParams = movieId && showtime;
 
   const { movies, status } = useMovies({ id: movieId || "0" });
 
+  // === STATE FOR TICKET QUANTITIES ===
+  const [tickets, setTickets] = useState({
+    adult: 0,
+    child: 0,
+    senior: 0,
+  });
+
+  const totalTickets = tickets.adult + tickets.child + tickets.senior;
+  // ========================================
+
   // State to track selected seats
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
+  const [selectionError, setSelectionError] = useState<string>("");
 
   const handleSelectSeat = (seatNumber: string) => {
+    // Prevent selection if seat is unavailable
+    if (UNAVAILABLE_SEATS.includes(seatNumber)) {
+      setSelectionError(`Seat ${seatNumber} is already booked and unavailable.`);
+      return;
+    }
+
     setSelectedSeats((prevSelectedSeats) => {
       if (prevSelectedSeats.includes(seatNumber)) {
-        // If seat is already selected unselect it
+        // If seat is already selected, unselect it
+        setSelectionError("");
         return prevSelectedSeats.filter((seat) => seat !== seatNumber);
       } else {
-        // Otherwise just select it
-        return [...prevSelectedSeats, seatNumber];
+        // Otherwise, try to select it
+        if (prevSelectedSeats.length < totalTickets) {
+          setSelectionError("");
+          return [...prevSelectedSeats, seatNumber];
+        } else {
+          // Prevent selection if max tickets are reached
+          setSelectionError(
+            `You can only select ${totalTickets} seat(s) for your purchase.`
+          );
+          return prevSelectedSeats;
+        }
       }
+    });
+  };
+
+  const handleTicketChange = (type: "adult" | "child" | "senior", value: string) => {
+    const quantity = Math.max(0, parseInt(value) || 0); // Ensure quantity is non-negative
+    setTickets((prevTickets) => {
+      const newTickets = { ...prevTickets, [type]: quantity };
+      const newTotalTickets = newTickets.adult + newTickets.child + newTickets.senior;
+
+      // If the new total is less than the currently selected seats, trim the selectedSeats list
+      if (newTotalTickets < selectedSeats.length) {
+        // Filter out any seats that are now beyond the new total, ensuring unavailable seats aren't included
+        const filteredSeats = selectedSeats
+          .filter(seat => !UNAVAILABLE_SEATS.includes(seat)) // Exclude unavailable seats from being kept (if somehow selected)
+          .slice(0, newTotalTickets);
+
+        setSelectedSeats(filteredSeats);
+        setSelectionError("Seat selection was automatically adjusted to match ticket count.");
+      } else {
+        setSelectionError("");
+      }
+
+      return newTickets;
     });
   };
 
@@ -77,7 +140,52 @@ export default function Home() {
       />
       <p className="text-lg">Showtime: {formatDateTime(new Date(showtime))}</p>
 
+      {/* === TICKET SELECTION SECTION === */}
+      <div className="flex flex-col items-center space-y-4 w-full max-w-sm p-4 border border-gray-700 rounded-lg">
+        <h2 className="text-xl font-semibold mb-2">Select Tickets</h2>
+        <div className="flex justify-between w-full">
+          <label htmlFor="adult-tickets">Adult ($12.00)</label>
+          <input
+            id="adult-tickets"
+            type="number"
+            min="0"
+            value={tickets.adult}
+            onChange={(e) => handleTicketChange("adult", e.target.value)}
+            className="w-16 p-1 text-white text-center rounded"
+          />
+        </div>
+        <div className="flex justify-between w-full">
+          <label htmlFor="child-tickets">Child ($8.00)</label>
+          <input
+            id="child-tickets"
+            type="number"
+            min="0"
+            value={tickets.child}
+            onChange={(e) => handleTicketChange("child", e.target.value)}
+            className="w-16 p-1 text-white text-center rounded"
+          />
+        </div>
+        <div className="flex justify-between w-full">
+          <label htmlFor="senior-tickets">Senior ($10.00)</label>
+          <input
+            id="senior-tickets"
+            type="number"
+            min="0"
+            value={tickets.senior}
+            onChange={(e) => handleTicketChange("senior", e.target.value)}
+            className="w-16 p-1 text-white text-center rounded"
+          />
+        </div>
+        <p className="text-base font-bold pt-2">Total Tickets: {totalTickets}</p>
+      </div>
+      {/* ==================================== */}
+
       <div className="flex flex-col items-center space-y-4">
+        {/* Error message for seat selection */}
+        {selectionError && (
+          <p className="text-red-400 text-center font-semibold">{selectionError}</p>
+        )}
+
         <div
           className="bg-white text-black w-72 md:w-125 h-8 flex items-center justify-center font-bold rounded-sm shadow-lg shadow-white/30"
           style={{ transform: "perspective(500px) rotateX(-30deg)" }}
@@ -95,13 +203,15 @@ export default function Home() {
               {row.map((seatNumber, seatIndex) => (
                 <div
                   key={seatNumber}
-                  className={`${
-                    seatIndex === 1 || seatIndex === 5 ? "mr-4" : ""
-                  }`}
+                  className={`${seatIndex === 1 || seatIndex === 5 ? "mr-4" : ""
+                    }`}
                 >
                   <Seat
                     seatNumber={seatNumber}
                     isSelected={selectedSeats.includes(seatNumber)}
+                    // === PASS NEW PROP ===
+                    isUnavailable={UNAVAILABLE_SEATS.includes(seatNumber)}
+                    // =====================
                     onSelect={handleSelectSeat}
                   />
                 </div>
@@ -116,21 +226,24 @@ export default function Home() {
             <span>Available</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-5 h-4 bg-purple-400 rounded-t-md"></div>
+            <div className="w-5 h-4 bg-purple-500 rounded-t-md"></div>
             <span>Selected</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-5 h-4 bg-red-400 rounded-t-md"></div>
+            <div className="w-5 h-4 bg-red-700 rounded-t-md"></div> {/* Updated color to match code */}
             <span>Unavailable</span>
           </div>
         </div>
       </div>
 
       <div className="text-center">
-        <p>You have selected {selectedSeats.length} seats:</p>
+        <p>
+          You have selected {selectedSeats.length} of {totalTickets} required seats:
+        </p>
       </div>
 
-      <button className="bg-purple-500 hover:bg-purple-600 transition-colors rounded-2xl px-4 py-2 text-2xl">
+      <button className="bg-purple-500 hover:bg-purple-600 transition-colors rounded-2xl px-4 py-2 text-2xl"
+        disabled={selectedSeats.length !== totalTickets || totalTickets === 0}>
         Continue to checkout
       </button>
 
