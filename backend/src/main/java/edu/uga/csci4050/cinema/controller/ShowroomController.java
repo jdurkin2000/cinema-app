@@ -43,4 +43,11 @@ public class ShowroomController {
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    @GetMapping("/{id}/showtimes")
+    public ResponseEntity<Showroom> getShowroomById(@PathVariable String id) {
+        return showroomRepository.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
 }
