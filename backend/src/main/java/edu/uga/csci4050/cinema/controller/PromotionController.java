@@ -6,6 +6,7 @@ import edu.uga.csci4050.cinema.model.User;
 import edu.uga.csci4050.cinema.repository.PromotionRepository;
 import edu.uga.csci4050.cinema.repository.UserRepository;
 import edu.uga.csci4050.cinema.service.MailService;
+import edu.uga.csci4050.cinema.util.HttpUtils;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,6 +31,13 @@ public class PromotionController {
         this.promotions = promotions;
         this.users = users;
         this.mail = mail;
+    }
+
+    @GetMapping
+    public ResponseEntity<List<Promotion>> getAllPromotions() {
+        List<Promotion> allPromos = promotions.findAll();
+
+        return HttpUtils.buildResponseEntity(allPromos, "No promotions in database");
     }
 
     /**
