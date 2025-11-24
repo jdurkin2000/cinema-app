@@ -131,9 +131,9 @@ export function useMovies(params: MovieQueryParams = {}) {
         const dataArray = Array.isArray(res.data)
           ? res.data
           : res.data
-          ? [res.data]
-          : [];
-          
+            ? [res.data]
+            : [];
+
         if (dataArray.length === 0) {
           setStatus({ currentState: "Not Found", message: "Movies not found." });
           return;
@@ -372,6 +372,33 @@ export async function getShowrooms(): Promise<Showroom[]> {
   } catch (err: any) {
     console.error("Error fetching showrooms:", err);
     return [];
+  }
+}
+
+/**
+ * Delete a showtime from a showroom (Admin only).
+ * Payload: { movieId: string, start: string }
+ */
+export async function deleteShowtimeFromShowroom(
+  showroomId: string,
+  payload: { movieId: string; start: string },
+  opts?: { token?: string }
+): Promise<void> {
+  try {
+    const token =
+      opts?.token ??
+      (typeof window !== "undefined" ? localStorage.getItem("authToken") : null);
+
+    await axios.delete(`${showroomApiBase}/${showroomId}/showtimes`, {
+      data: payload,
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+  } catch (err: any) {
+    const info = buildError(err);
+    type JsError = InstanceType<typeof globalThis.Error>;
+    const e: JsError & { status?: number } = new globalThis.Error(info.message);
+    e.status = info.status ?? undefined;
+    throw e;
   }
 }
 
