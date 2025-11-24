@@ -21,6 +21,13 @@ export default function Profile() {
   const [err, setErr] = useState<string | null>(null);
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
 
+  // Controlled address fields
+  const [name, setName] = useState("");
+  const [addr1, setAddr1] = useState("");
+  const [city, setCity] = useState("");
+  const [stateVal, setStateVal] = useState("");
+  const [zip, setZip] = useState("");
+
   useEffect(() => {
     const t = getToken();
     if (!t) {
@@ -33,7 +40,14 @@ export default function Profile() {
 
   async function load(t: string) {
     try {
-      setData(await me(t));
+      const res = await me(t);
+      setData(res);
+
+      setName(res.name || "");
+      setAddr1(res.address?.line1 || "");
+      setCity(res.address?.city || "");
+      setStateVal(res.address?.state || "");
+      setZip(res.address?.zip || "");
     } catch {
       router.push("/login");
     }
@@ -44,6 +58,11 @@ export default function Profile() {
     setMsg(null);
     setErr(null);
     const target = e.target as any;
+
+    if (!target.line1.value || !target.city.value || !target.state.value || !target.zip.value) {
+      setErr("Please fill out all required address fields.");
+      return;
+    }
 
     try {
       await updateProfile(token!, {
@@ -109,6 +128,9 @@ export default function Profile() {
 
   if (!data) return null;
 
+  // Reactive boolean for disabling Save button
+  const canSave = name.trim() !== "" && addr1.trim() !== "" && city.trim() !== "" && stateVal.trim() !== "" && zip.trim() !== "";
+
   return (
     <div className="profile-container">
       <div className="profile-header">
@@ -117,15 +139,6 @@ export default function Profile() {
           <Link href="/" className="profile-btn-secondary">
             Back to Home
           </Link>
-          <button
-            className="profile-logout"
-            onClick={() => {
-              clearToken();
-              router.push("/");
-            }}
-          >
-            Logout
-          </button>
         </div>
       </div>
 
@@ -135,7 +148,18 @@ export default function Profile() {
       {/* Profile Form */}
       <form onSubmit={saveProfile} className="profile-section">
         <div className="section-title">Profile</div>
-        <input name="name" defaultValue={data.name} required className="input" />
+        
+        <input
+          name="name"
+          className="input"
+          placeholder="Full name"
+          value={name}           // <-- controlled value
+          required
+          onChange={(e) => setName(e.target.value)}  // <-- update state
+        />
+
+       
+
         <input value={data.email} disabled className="input disabled" />
 
         <label className="checkbox-row">
@@ -144,14 +168,52 @@ export default function Profile() {
         </label>
 
         <div className="grid-2">
-          <input name="line1" className="input" placeholder="Address line 1" defaultValue={data.address?.line1 || ""} />
-          <input name="line2" className="input" placeholder="Address line 2" defaultValue={data.address?.line2 || ""} />
-          <input name="city" className="input" placeholder="City" defaultValue={data.address?.city || ""} />
-          <input name="state" className="input" placeholder="State" defaultValue={data.address?.state || ""} />
-          <input name="zip" className="input" placeholder="ZIP" defaultValue={data.address?.zip || ""} />
+          <input
+            name="line1"
+            className="input"
+            placeholder="Address line 1"
+            value={addr1}
+            required
+            onChange={(e) => setAddr1(e.target.value)}
+          />
+          <input
+            name="line2"
+            className="input"
+            placeholder="Address line 2"
+            defaultValue={data.address?.line2 || ""}
+          />
+          <input
+            name="city"
+            className="input"
+            placeholder="City"
+            value={city}
+            required
+            onChange={(e) => setCity(e.target.value)}
+          />
+          <input
+            name="state"
+            className="input"
+            placeholder="State"
+            value={stateVal}
+            required
+            onChange={(e) => setStateVal(e.target.value)}
+          />
+          <input
+            name="zip"
+            className="input"
+            placeholder="ZIP"
+            value={zip}
+            required
+            onChange={(e) => setZip(e.target.value)}
+          />
         </div>
 
-        <button className="profile-btn-primary">Save</button>
+        <button
+          className="profile-btn-primary"
+          disabled={!canSave}
+        >
+          Save
+        </button>
       </form>
 
       {/* Change Password */}

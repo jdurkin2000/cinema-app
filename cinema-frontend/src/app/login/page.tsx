@@ -31,24 +31,35 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="login-container">
+        <div className="login-container">
       <h1 className="login-header">Sign in</h1>
+
       {verified && <p className="login-msg">Email verified. You can sign in now.</p>}
+
       <form onSubmit={onSubmit} className="login-form">
-        <input
-          type="email"
-          placeholder="Email"
-          required
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          required
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-        />
+
+        <div className="input-with-asterisk">
+          <input
+            type="email"
+            placeholder="Email"
+            required
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+          />
+          <span className="required-asterisk">*</span>
+        </div>
+
+        <div className="input-with-asterisk">
+          <input
+            type="password"
+            placeholder="Password"
+            required
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+          />
+          <span className="required-asterisk">*</span>
+        </div>
+
         <label>
           <input
             type="checkbox"
@@ -57,13 +68,17 @@ export default function LoginPage() {
           />
           <span>Remember me</span>
         </label>
+
         <button type="submit" className="login-button">Login</button>
       </form>
+
       {err && <p className="login-err">{err}</p>}
+
       <div className="login-footer">
         <Link href="/forgot-password">Forgot password?</Link> |{" "}
         <Link href="/register">Sign up</Link>
       </div>
     </div>
+
   );
 }

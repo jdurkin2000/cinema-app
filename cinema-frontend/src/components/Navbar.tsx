@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import logo from "@/assets/logo.svg";
 import { getToken, clearToken } from "@/libs/authStore";
+import { useRouter } from "next/navigation";
 import "./Navbar.css";
 
 function decodeJwt(token: string) {
@@ -25,7 +26,7 @@ function decodeJwt(token: string) {
 
 export default function Navbar() {
   const [username, setUsername] = useState<string | null>(null);
-
+  const router = useRouter();   
   // Update username from token
   const updateUser = () => {
     const token = getToken();
@@ -47,6 +48,7 @@ export default function Navbar() {
     clearToken();
     setUsername(null);
     window.dispatchEvent(new Event("token-changed")); // notify others
+    router.push("/"); 
   };
 
   return (
