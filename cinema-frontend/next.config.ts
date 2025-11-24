@@ -5,13 +5,15 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       {
+        protocol: "https",
+        hostname: "**",
+      },
+      {
         protocol: "http",
-        hostname: "image.tmdb.org",
-        port: "",       // leave empty unless you need a non-standard port
-        pathname: "/t/p/**", // match TMDb poster & backdrop paths
+        hostname: "**",
       },
     ],
-  }
+  },
 };
 
 export default nextConfig;

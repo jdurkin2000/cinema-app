@@ -1,5 +1,6 @@
 import { Showroom, Showtime } from "@/models/shows";
 import Movie from "@/models/movie";
+import axios from "axios";
 
 const MOVIE_DURATION_MS = 3 * 60 * 60 * 1000; // 3 hours
 
@@ -27,6 +28,20 @@ const showroomsDb: Showroom[] = [
     showtimes: [],
   },
 ];
+
+export async function createShowroom(showroom: Showroom): Promise<Showroom> {
+    // Convert Date objects to ISO strings since JSON cannot send Date objects
+    const payload = {
+        ...showroom,
+        showtimes: showroom.showtimes.map(st => ({
+            ...st,
+            start: st.start instanceof Date ? st.start.toISOString() : st.start
+        }))
+    };
+
+    const response = await axios.post<Showroom>("/api/showrooms", payload);
+    return response.data;
+}
 
 /**
  * Retrieves all showtimes for a given movie across all showrooms.
@@ -125,6 +140,25 @@ export function scheduleMovie(
 
   const newShowtime: Showtime = { movieId:movie.id, start: date, bookedSeats: [] };
 
+  showroom.showtimes.push(newShowtime);
+
+  return true;
+}
+
+export function scheduleMovieWithShowroom(
+  movie: Movie,
+  date: Date,
+  showroom: Showroom
+): boolean {
+
+  if (
+    showroom.showtimes.some((showtime) => moviesOverlap(date, showtime.start))
+  ) {
+    return false;
+  }
+
+  const newShowtime: Showtime = { movieId:movie.id, start: date, bookedSeats: [] };
+  
   showroom.showtimes.push(newShowtime);
 
   return true;

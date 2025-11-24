@@ -53,8 +53,8 @@ export default function AdminPage() {
             <span>Add Movie</span>
           </Link>
 
-          <Link href="/system-admin/edit-movie" className={buttonStyle}>
-            <span>Edit Movie</span>
+          <Link href="/system-admin/schedule-movie" className={buttonStyle}>
+            <span>Schedule Movie</span>
           </Link>
 
           <Link href="/system-admin/statistics" className={buttonStyle}>

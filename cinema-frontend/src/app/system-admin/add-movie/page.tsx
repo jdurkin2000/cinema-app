@@ -4,6 +4,18 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createMovie, CreateMoviePayload } from "@/libs/cinemaApi";
 
+function hasDuplicateStrings(arr: string[]): boolean {
+  const seen = new Set<string>();
+
+  for (const s of arr) {
+    if (seen.has(s)) return true; // found a duplicate
+    seen.add(s);
+  }
+
+  return false;
+}
+
+
 /**
  * Admin / Add Movie
  * - Validates required fields (title, poster, trailer, rating)
@@ -74,6 +86,10 @@ export default function AddMoviePage() {
 
     try {
       setBusy(true);
+      if (payload.showtimes) {
+        if (hasDuplicateStrings(payload.showtimes as string[]))
+          throw new Error("Cannot book two movies in the same time and room!");
+      }
       await createMovie(payload);
       router.push("/system-admin");
     } catch (err: any) {

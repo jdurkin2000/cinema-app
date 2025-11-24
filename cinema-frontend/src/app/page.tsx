@@ -8,7 +8,8 @@ import Movie from "@/models/movie";
 import { FormEvent, ReactElement, useState, useEffect } from "react";
 import Link from "next/link";
 import { getToken, clearToken } from "@/libs/authStore";
-import { scheduleMovie } from "@/libs/showingsApi";
+import { createShowroom, scheduleMovie, scheduleMovieWithShowroom } from "@/libs/showingsApi";
+import { Showroom } from "@/models/shows";
 
 function decodeJwt(token: string) {
   try {
@@ -146,11 +147,12 @@ function getMovieList(movies: Movie[]): ReactElement {
 }
 
 function populateShowrooms(movies: Movie[]) {
-  const showroomids = ["a", "b", "c"];
-  let currentId = 0;
+  const showroom: Showroom = {id: "", showtimes: []}
 
   movies.forEach(movie => {
-    scheduleMovie(movie, movie.showtimes[0], showroomids[currentId++]);
+    scheduleMovieWithShowroom(movie, movie.showtimes[0], showroom);
   });
+
+  createShowroom(showroom);
 }
 
