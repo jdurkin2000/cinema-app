@@ -183,7 +183,7 @@ export default function Home() {
               <h3 className="section-title">Confirm your showtime</h3>
               <p className="section-text" style={{ marginTop: "0.5rem" }}>
                 {selectedShowtime
-                  ? `You picked ${selectedShowtime.toLocaleString()}.`
+                  ? `You picked ${selectedShowtime.start.toLocaleString()}.`
                   : "Pick a time."}
               </p>
               <div className="modal-buttons">
