@@ -11,17 +11,16 @@
   z-index: 100;
 
   /* Slightly transparent gradient background */
-  background: linear-gradient(
-    145deg,
-    #550786d9,  /* 85% opacity */
-    rgba(0, 0, 0, 0.85)
-  );
+  background: linear-gradient(145deg,
+      #550786d9,
+      /* 85% opacity */
+      rgba(0, 0, 0, 0.85));
 
   /* Frosted glass effect */
   backdrop-filter: blur(8px);
 
   /* Subtle inner shadow + drop shadow */
-  box-shadow: inset 0 -2px 6px rgba(0,0,0,0.3), 0 4px 6px rgba(0,0,0,0.3);
+  box-shadow: inset 0 -2px 6px rgba(0, 0, 0, 0.3), 0 4px 6px rgba(0, 0, 0, 0.3);
 }
 
 
@@ -34,25 +33,39 @@
   color: #fdffe8;
   margin-left: -5px;
   font-size: 1.5rem;
-  font-family: 'Zen Dots', cursive; /* Only affects the title */
+  font-family: 'Zen Dots', cursive;
+  /* Only affects the title */
 }
 
 .nav-welcome {
-    display: flex;            /* make it a flex item */
-    align-items: center;      /* vertical center */
-    color: #fdffe8;
-    font-weight: bold;
-    font-style: italic;
-    font-size: .9rem;
+  display: flex;
+  /* make it a flex item */
+  align-items: center;
+  /* vertical center */
+  color: #fdffe8;
+  font-weight: bold;
+  font-style: italic;
+  font-size: .9rem;
+}
+
+.admin-home-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.75rem;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  color: #fdffe8;
+  text-decoration: none;
 }
 
 
 .nav-links {
-    color: #fdffe8;
-    margin-left: auto;
-    display: flex;
-    gap: 1rem;
-    font-family: 'Inter', sans-serif;
+  color: #fdffe8;
+  margin-left: auto;
+  display: flex;
+  gap: 1rem;
+  font-family: 'Inter', sans-serif;
 }
 
 .nav-link-strong {
@@ -81,7 +94,7 @@
   cursor: pointer;
 }
 
-.signin-button{
+.signin-button {
   background: #fdffe8;
   color: #000000;
   border: none;

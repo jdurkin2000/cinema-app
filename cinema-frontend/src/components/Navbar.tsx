@@ -26,15 +26,18 @@ function decodeJwt(token: string) {
 
 export default function Navbar() {
   const [username, setUsername] = useState<string | null>(null);
-  const router = useRouter();   
+  const [role, setRole] = useState<string | null>(null);
+  const router = useRouter();
   // Update username from token
   const updateUser = () => {
     const token = getToken();
     if (token) {
       const decoded = decodeJwt(token);
       setUsername(decoded?.name || decoded?.sub || null);
+      setRole(decoded?.role || null);
     } else {
       setUsername(null);
+      setRole(null);
     }
   };
 
@@ -48,7 +51,7 @@ export default function Navbar() {
     clearToken();
     setUsername(null);
     window.dispatchEvent(new Event("token-changed")); // notify others
-    router.push("/"); 
+    router.push("/");
   };
 
   return (
@@ -61,8 +64,14 @@ export default function Navbar() {
       <div className="nav-links">
         {username ? (
           <>
-            <span className="nav-welcome">Welcome, {username}</span>
-            <Link href="/profile">Edit Profile</Link>
+            {role === "ADMIN" ? (
+              <Link href="/system-admin" className="nav-welcome admin-home-button">Admin Homepage</Link>
+            ) : (
+              <>
+                <span className="nav-welcome">Welcome, {username}</span>
+                <Link href="/profile">Edit Profile</Link>
+              </>
+            )}
             <button className="logout-button" onClick={handleLogout}>Logout</button>
           </>
         ) : (
