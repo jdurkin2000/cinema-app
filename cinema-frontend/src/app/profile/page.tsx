@@ -1,9 +1,17 @@
 "use client";
 import { useEffect, useState, FormEvent } from "react";
-import { addCard, changePassword, me, removeCard, updateCard, updateProfile } from "@/libs/authApi";
+import {
+  addCard,
+  changePassword,
+  me,
+  removeCard,
+  updateCard,
+  updateProfile,
+} from "@/libs/authApi";
 import { clearToken, getToken } from "@/libs/authStore";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import "./profile.css";
 
 export default function Profile() {
   const router = useRouter();
@@ -15,7 +23,10 @@ export default function Profile() {
 
   useEffect(() => {
     const t = getToken();
-    if (!t) { router.push("/login"); return; }
+    if (!t) {
+      router.push("/login");
+      return;
+    }
     setToken(t);
     load(t);
   }, []);
@@ -30,13 +41,10 @@ export default function Profile() {
 
   async function saveProfile(e: FormEvent) {
     e.preventDefault();
-    setMsg(null); setErr(null);
-    const target = e.target as typeof e.target & {
-      name: { value: string };
-      promos: { checked: boolean };
-      line1: { value: string }; line2: { value: string };
-      city: { value: string }; state: { value: string }; zip: { value: string };
-    };
+    setMsg(null);
+    setErr(null);
+    const target = e.target as any;
+
     try {
       await updateProfile(token!, {
         firstLastName: target.name.value,
@@ -46,9 +54,10 @@ export default function Profile() {
           line2: target.line2.value,
           city: target.city.value,
           state: target.state.value,
-          zip: target.zip.value
-        }
+          zip: target.zip.value,
+        },
       });
+
       setMsg("Profile saved");
       await load(token!);
     } catch (x: any) {
@@ -58,11 +67,10 @@ export default function Profile() {
 
   async function changePwd(e: FormEvent) {
     e.preventDefault();
-    setMsg(null); setErr(null);
-    const target = e.target as typeof e.target & {
-      current: { value: string };
-      new: { value: string };
-    };
+    setMsg(null);
+    setErr(null);
+    const target = e.target as any;
+
     try {
       await changePassword(token!, target.current.value, target.new.value);
       setMsg("Password changed");
@@ -73,14 +81,10 @@ export default function Profile() {
 
   async function addCardSubmit(e: FormEvent) {
     e.preventDefault();
-    setMsg(null); setErr(null);
-    const target = e.target as typeof e.target & {
-      number: { value: string };
-      month: { value: string }; year: { value: string };
-      billingName: { value: string };
-      bline1: { value: string }; bline2: { value: string };
-      bcity: { value: string }; bstate: { value: string }; bzip: { value: string };
-    };
+    setMsg(null);
+    setErr(null);
+    const target = e.target as any;
+
     try {
       await addCard(token!, {
         number: target.number.value,
@@ -92,9 +96,10 @@ export default function Profile() {
           line2: target.bline2.value,
           city: target.bcity.value,
           state: target.bstate.value,
-          zip: target.bzip.value
-        }
+          zip: target.bzip.value,
+        },
       });
+
       setMsg("Card added");
       await load(token!);
     } catch (x: any) {
@@ -105,66 +110,86 @@ export default function Profile() {
   if (!data) return null;
 
   return (
-    <div className="max-w-2xl mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold">My Profile</h1>
-        <div className="flex items-center gap-4">
-          <Link href="/" className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
+    <div className="profile-container">
+      <div className="profile-header">
+        <h1>My Profile</h1>
+        <div className="profile-header-actions">
+          <Link href="/" className="profile-btn-secondary">
             Back to Home
           </Link>
-          <button className="text-red-600 underline" onClick={() => { clearToken(); router.push("/"); }}>Logout</button>
+          <button
+            className="profile-logout"
+            onClick={() => {
+              clearToken();
+              router.push("/");
+            }}
+          >
+            Logout
+          </button>
         </div>
       </div>
 
-      {msg && <div className="text-green-600">{msg}</div>}
-      {err && <div className="text-red-600">{err}</div>}
+      {msg && <div className="profile-msg">{msg}</div>}
+      {err && <div className="profile-err">{err}</div>}
 
       {/* Profile Form */}
-      <form onSubmit={saveProfile} className="space-y-2 border p-4 rounded">
-        <div className="font-medium">Profile</div>
-        <input name="name" className="border p-2 w-full" defaultValue={data.name} required />
-        <input className="border p-2 w-full" value={data.email} disabled />
-        <label className="flex items-center gap-2 mt-2">
+      <form onSubmit={saveProfile} className="profile-section">
+        <div className="section-title">Profile</div>
+        <input name="name" defaultValue={data.name} required className="input" />
+        <input value={data.email} disabled className="input disabled" />
+
+        <label className="checkbox-row">
           <input name="promos" type="checkbox" defaultChecked={data.promotionsOptIn} />
           <span>Receive promotions</span>
         </label>
-        <div className="grid grid-cols-2 gap-2">
-          <input name="line1" className="border p-2" placeholder="Address line 1" defaultValue={data.address?.line1 || ""} />
-          <input name="line2" className="border p-2" placeholder="Address line 2" defaultValue={data.address?.line2 || ""} />
-          <input name="city" className="border p-2" placeholder="City" defaultValue={data.address?.city || ""} />
-          <input name="state" className="border p-2" placeholder="State" defaultValue={data.address?.state || ""} />
-          <input name="zip" className="border p-2" placeholder="ZIP" defaultValue={data.address?.zip || ""} />
+
+        <div className="grid-2">
+          <input name="line1" className="input" placeholder="Address line 1" defaultValue={data.address?.line1 || ""} />
+          <input name="line2" className="input" placeholder="Address line 2" defaultValue={data.address?.line2 || ""} />
+          <input name="city" className="input" placeholder="City" defaultValue={data.address?.city || ""} />
+          <input name="state" className="input" placeholder="State" defaultValue={data.address?.state || ""} />
+          <input name="zip" className="input" placeholder="ZIP" defaultValue={data.address?.zip || ""} />
         </div>
-        <button className="bg-black text-white px-4 py-2 rounded mt-2">Save</button>
+
+        <button className="profile-btn-primary">Save</button>
       </form>
 
       {/* Change Password */}
-      <form onSubmit={changePwd} className="space-y-2 border p-4 rounded">
-        <div className="font-medium">Change password</div>
-        <input name="current" className="border p-2 w-full" type="password" placeholder="Current password" required />
-        <input name="new" className="border p-2 w-full" type="password" minLength={8} placeholder="New password" required />
-        <button className="bg-black text-white px-4 py-2 rounded">Change</button>
+      <form onSubmit={changePwd} className="profile-section">
+        <div className="section-title">Change password</div>
+        <input name="current" type="password" placeholder="Current password" required className="input" />
+        <input name="new" type="password" placeholder="New password" minLength={8} required className="input" />
+        <button className="profile-btn-primary">Change</button>
       </form>
 
       {/* Payment Cards */}
-      <div className="space-y-2 border p-4 rounded">
-        <div className="font-medium">Payment cards (max 4)</div>
-        <ul className="space-y-2">
+      <div className="profile-section">
+        <div className="section-title">Payment cards (max 4)</div>
+
+        <ul className="cards-list">
           {data.paymentCards.map((c: any) => (
-            <li key={c.id} className="flex flex-col gap-2 border-b pb-2">
-              <div className="flex justify-between items-center">
-                <span>{c.brand} •••• {c.last4}  (exp {c.expMonth}/{c.expYear})</span>
-                <div className="flex gap-2">
+            <li key={c.id} className="card-item">
+              <div className="card-top-row">
+                <span>
+                  {c.brand} •••• {c.last4} (exp {c.expMonth}/{c.expYear})
+                </span>
+
+                <div className="card-actions">
                   <button
-                    className="text-sm text-blue-600 underline"
-                    onClick={() => setEditingCardId(c.id === editingCardId ? null : c.id)}
+                    className="link-btn"
+                    onClick={() =>
+                      setEditingCardId(editingCardId === c.id ? null : c.id)
+                    }
                   >
                     {editingCardId === c.id ? "Cancel" : "Edit"}
                   </button>
+
                   <button
-                    className="text-sm text-red-600 underline"
-                    onClick={async () => { await removeCard(token!, c.id); await load(token!); }}
+                    className="link-btn danger"
+                    onClick={async () => {
+                      await removeCard(token!, c.id);
+                      await load(token!);
+                    }}
                   >
                     Remove
                   </button>
@@ -175,20 +200,11 @@ export default function Profile() {
                 <form
                   onSubmit={async (e) => {
                     e.preventDefault();
-                    const target = e.target as typeof e.target & {
-                      number?: { value: string };
-                      month: { value: string };
-                      year: { value: string };
-                      billingName: { value: string };
-                      bline1: { value: string };
-                      bline2: { value: string };
-                      bcity: { value: string };
-                      bstate: { value: string };
-                      bzip: { value: string };
-                    };
+                    const target = e.target as any;
+
                     try {
                       await updateCard(token!, c.id, {
-                        number: target.number?.value || undefined, // optional card number edit
+                        number: target.number?.value || undefined,
                         expMonth: Number(target.month.value),
                         expYear: Number(target.year.value),
                         billingName: target.billingName.value,
@@ -197,26 +213,27 @@ export default function Profile() {
                           line2: target.bline2.value,
                           city: target.bcity.value,
                           state: target.bstate.value,
-                          zip: target.bzip.value
-                        }
+                          zip: target.bzip.value,
+                        },
                       });
+
                       setEditingCardId(null);
                       await load(token!);
                     } catch (x: any) {
                       setErr(x?.response?.data?.message || "Update card failed");
                     }
                   }}
-                  className="grid grid-cols-2 gap-2 mt-2"
+                  className="grid-2 edit-card-grid"
                 >
-                  <input name="month" type="number" min={1} max={12} defaultValue={c.expMonth} className="border p-2" required />
-                  <input name="year" type="number" min={2024} max={2100} defaultValue={c.expYear} className="border p-2" required />
-                  <input name="billingName" className="border p-2 col-span-2" defaultValue={c.billingName} required />
-                  <input name="bline1" className="border p-2 col-span-2" defaultValue={c.billingAddress.line1} required />
-                  <input name="bline2" className="border p-2 col-span-2" defaultValue={c.billingAddress.line2} />
-                  <input name="bcity" className="border p-2" defaultValue={c.billingAddress.city} required />
-                  <input name="bstate" className="border p-2" defaultValue={c.billingAddress.state} required />
-                  <input name="bzip" className="border p-2" defaultValue={c.billingAddress.zip} required />
-                  <button className="bg-black text-white px-4 py-2 rounded col-span-2">Save</button>
+                  <input name="month" type="number" min={1} max={12} defaultValue={c.expMonth} required className="input" />
+                  <input name="year" type="number" min={2024} max={2100} defaultValue={c.expYear} required className="input" />
+                  <input name="billingName" className="input col-2" defaultValue={c.billingName} required />
+                  <input name="bline1" className="input col-2" defaultValue={c.billingAddress.line1} required />
+                  <input name="bline2" className="input col-2" defaultValue={c.billingAddress.line2} />
+                  <input name="bcity" className="input" defaultValue={c.billingAddress.city} required />
+                  <input name="bstate" className="input" defaultValue={c.billingAddress.state} required />
+                  <input name="bzip" className="input" defaultValue={c.billingAddress.zip} required />
+                  <button className="profile-btn-primary col-2">Save</button>
                 </form>
               )}
             </li>
@@ -224,17 +241,17 @@ export default function Profile() {
         </ul>
 
         {data.paymentCards.length < 4 && (
-          <form onSubmit={addCardSubmit} className="grid grid-cols-2 gap-2 mt-2">
-            <input name="number" className="border p-2 col-span-2" placeholder="Card number" required />
-            <input name="month" className="border p-2" placeholder="MM" type="number" min={1} max={12} required />
-            <input name="year" className="border p-2" placeholder="YYYY" type="number" min={2024} max={2100} required />
-            <input name="billingName" className="border p-2 col-span-2" placeholder="Billing name" required />
-            <input name="bline1" className="border p-2 col-span-2" placeholder="Billing address line 1" required />
-            <input name="bline2" className="border p-2 col-span-2" placeholder="Billing address line 2" />
-            <input name="bcity" className="border p-2" placeholder="City" required />
-            <input name="bstate" className="border p-2" placeholder="State" required />
-            <input name="bzip" className="border p-2" placeholder="ZIP" required />
-            <button className="bg-black text-white px-4 py-2 rounded col-span-2">Add card</button>
+          <form onSubmit={addCardSubmit} className="grid-2 add-card-grid">
+            <input name="number" className="input col-2" placeholder="Card number" required />
+            <input name="month" className="input" placeholder="MM" type="number" min={1} max={12} required />
+            <input name="year" className="input" placeholder="YYYY" type="number" min={2024} max={2100} required />
+            <input name="billingName" className="input col-2" placeholder="Billing name" required />
+            <input name="bline1" className="input col-2" placeholder="Billing address line 1" required />
+            <input name="bline2" className="input col-2" placeholder="Billing address line 2" />
+            <input name="bcity" className="input" placeholder="City" required />
+            <input name="bstate" className="input" placeholder="State" required />
+            <input name="bzip" className="input" placeholder="ZIP" required />
+            <button className="profile-btn-primary col-2">Add card</button>
           </form>
         )}
       </div>
