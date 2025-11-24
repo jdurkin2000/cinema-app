@@ -112,4 +112,41 @@ public class MovieController {
         MovieItem saved = movieRepository.save(m);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<MovieItem> updateMovie(@PathVariable String id, @Valid @RequestBody MovieDtos.CreateRequest dto) {
+        return movieRepository.findById(id)
+                .map(m -> {
+                    m.setTitle(dto.title);
+                    m.setGenres(dto.genres);
+                    m.setCast(dto.cast);
+                    m.setDirector(dto.director);
+                    m.setProducer(dto.producer);
+                    m.setSynopsis(dto.synopsis);
+                    m.setReviews(dto.reviews);
+                    m.setPoster(dto.poster);
+                    m.setTrailer(dto.trailer);
+                    m.setShowtimes(dto.showtimes);
+                    m.setReleased(dto.released);
+                    if (dto.rating != null) {
+                        String r = dto.rating.trim().toUpperCase().replace("-", "").replace(" ", "");
+                        try {
+                            if ("PG13".equals(r)) m.setRating(RatingCode.PG13);
+                            else if ("NC17".equals(r)) m.setRating(RatingCode.NC17);
+                            else m.setRating(RatingCode.valueOf(r));
+                        } catch (Exception ignored) {
+                            m.setRating(RatingCode.NR);
+                        }
+                    }
+                    Boolean upcoming = dto.upcoming;
+                    if (upcoming == null) {
+                        LocalDate rel = dto.released;
+                        upcoming = (rel != null && rel.isAfter(LocalDate.now()));
+                    }
+                    m.setUpcoming(upcoming != null && upcoming);
+                    return ResponseEntity.ok(movieRepository.save(m));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
 }

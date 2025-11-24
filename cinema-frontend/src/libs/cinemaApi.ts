@@ -351,3 +351,83 @@ export async function sendPromotion(
     throw e;
   }
 }
+
+// ------- Showrooms -------
+
+export type Showroom = {
+  id: string;
+  name?: string;
+  showtimes?: any[];
+};
+
+const showroomApiBase = "http://localhost:8080/api/showrooms";
+
+/**
+ * Fetch all showrooms.
+ */
+export async function getShowrooms(): Promise<Showroom[]> {
+  try {
+    const res = await axios.get<Showroom[]>(showroomApiBase);
+    return res.data;
+  } catch (err: any) {
+    console.error("Error fetching showrooms:", err);
+    return [];
+  }
+}
+
+// ------- Movie Admin (Get, Update) -------
+
+/**
+ * Fetch a single movie by ID.
+ */
+export async function getMovie(movieId: string): Promise<Movie> {
+  try {
+    const res = await axios.get<Movie>(`${baseApiString}/${movieId}`, {
+      transformResponse: [(data) => (data ? JSON.parse(data, dateReviver) : null)],
+    });
+    return res.data;
+  } catch (err: any) {
+    const info = buildError(err);
+    type JsError = InstanceType<typeof globalThis.Error>;
+    const e: JsError & { status?: number } = new globalThis.Error(info.message);
+    e.status = info.status ?? undefined;
+    throw e;
+  }
+}
+
+/**
+ * Update an existing movie (Admin only).
+ */
+export async function updateMovie(
+  movieId: string,
+  payload: CreateMoviePayload,
+  opts?: { token?: string }
+): Promise<Movie> {
+  try {
+    const toIso = (v: unknown) =>
+      v instanceof Date ? v.toISOString() : typeof v === "string" ? v : undefined;
+
+    const body = {
+      ...payload,
+      released: payload.released ? toIso(payload.released) : undefined,
+      showtimes: payload.showtimes?.map(toIso).filter(Boolean),
+    };
+
+    const token =
+      opts?.token ??
+      (typeof window !== "undefined" ? localStorage.getItem("authToken") : null);
+
+    const res = await axios.put<Movie>(`${baseApiString}/${movieId}`, body, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      transformResponse: [(data) => (data ? JSON.parse(data, dateReviver) : null)],
+    });
+
+    return res.data;
+  } catch (err: any) {
+    const info = buildError(err);
+    type JsError = InstanceType<typeof globalThis.Error>;
+    const e: JsError & { status?: number } = new globalThis.Error(info.message);
+    e.status = info.status ?? undefined;
+    throw e;
+  }
+}
