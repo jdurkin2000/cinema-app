@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -42,6 +43,26 @@ public class ShowroomController {
                     return ResponseEntity.ok(showroomRepository.save(showroom));
                 })
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/{id}/showtimes")
+    public ResponseEntity<Showroom> removeShowtimeFromShowroom(@PathVariable String id,
+            @RequestBody Showtime showtime) {
+        var maybe = showroomRepository.findById(id);
+        if (maybe.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Showroom showroom = maybe.get();
+        boolean removed = showroom.getShowtimes()
+                .removeIf(st -> String.valueOf(st.movieId()).equals(String.valueOf(showtime.movieId()))
+                        && st.start().equals(showtime.start()));
+
+        if (removed) {
+            return ResponseEntity.ok(showroomRepository.save(showroom));
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @GetMapping("/{id}/showtimes")

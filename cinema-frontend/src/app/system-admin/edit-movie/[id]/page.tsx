@@ -8,6 +8,7 @@ import {
   getShowrooms,
   CreateMoviePayload,
   Showroom, // <-- Importing Showroom type from cinemaApi.ts
+  deleteShowtimeFromShowroom,
 } from "@/libs/cinemaApi";
 import Movie from "@/models/movie"; // <-- IMPORTANT: Importing Movie model type
 
@@ -20,6 +21,8 @@ interface ShowtimeEntry {
   id: number;
   time: string; // ISO string: 2025-12-01T19:30
   showroomName: string; // Used for display and identification
+  rawStart?: string;
+  showroomId?: string;
 }
 
 /**
@@ -90,6 +93,8 @@ export default function EditMoviePage() {
                 id: Date.now() + showtimeEntries.length,
                 time: startIso.substring(0, 16),
                 showroomName: room.name || room.id || "Unnamed Showroom",
+                rawStart: startIso,
+                showroomId: room.id,
               });
             }
           });
@@ -124,8 +129,30 @@ export default function EditMoviePage() {
 
   // Adding new showtimes has been removed from this page.
 
-  const removeShowtimeEntry = (id: number) => {
-    setCurrentShowtimes(currentShowtimes.filter((st) => st.id !== id));
+  const removeShowtimeEntry = async (id: number) => {
+    setError(null);
+    const entry = currentShowtimes.find((s) => s.id === id);
+    if (!entry) return;
+
+    // If we have showroom info, attempt to delete server-side first
+    if (entry.showroomId && entry.rawStart) {
+      try {
+        setBusy(true);
+        await deleteShowtimeFromShowroom(entry.showroomId, {
+          movieId: movieId,
+          start: entry.rawStart,
+        });
+        // on success, remove locally
+        setCurrentShowtimes((prev) => prev.filter((st) => st.id !== id));
+      } catch (err: any) {
+        setError(err?.message || "Failed to remove showtime.");
+      } finally {
+        setBusy(false);
+      }
+    } else {
+      // fallback: local-only remove
+      setCurrentShowtimes((prev) => prev.filter((st) => st.id !== id));
+    }
   };
 
   // --- Submit Handler (Update Logic) ---
