@@ -189,7 +189,8 @@ export default function AddMoviePage() {
               onChange={(e) => setReleased(e.target.value)}
             />
           </div>
-
+            
+            {/*}
           <div className="flex items-center gap-2 pt-7">
             <input
               id="upcoming"
@@ -202,6 +203,8 @@ export default function AddMoviePage() {
               Upcoming
             </label>
           </div>
+           */}  
+
         </div>
 
         {/* Director / Producer */}
@@ -277,8 +280,9 @@ export default function AddMoviePage() {
             />
           </div>
         </div>
-
-        {/* Showtimes */}
+        
+         {/*  
+        { Showtimes }
         <div>
           <label className="block text-sm font-medium">
             Showtimes (ISO, comma/line — e.g., 2025-12-01T19:30)
@@ -291,7 +295,8 @@ export default function AddMoviePage() {
             placeholder={`2025-12-01T19:30\n2025-12-02T20:00`}
           />
         </div>
-
+            */}
+            
         {/* Actions */}
         <div className="pt-2 flex items-center gap-3">
           <button
