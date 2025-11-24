@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   createPromotion,
   CreatePromotionPayload,
   sendPromotion,
+  Promotion,
 } from "@/libs/cinemaApi";
 import "./promotions.css";
 
@@ -21,6 +22,8 @@ export default function PromotionsPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [lastPromotionId, setLastPromotionId] = useState<string | null>(null);
+  const [promotions, setPromotions] = useState<Promotion[]>([]);
+  const [promosLoading, setPromosLoading] = useState(false);
 
   const validate = () => {
     const trimmedCode = code.trim();
@@ -33,6 +36,28 @@ export default function PromotionsPage() {
 
     return null;
   };
+
+  // Load current promotions from backend
+  const loadPromotions = async () => {
+    setPromosLoading(true);
+    try {
+      const res = await fetch("http://localhost:8080/api/promotions");
+      if (!res.ok) throw new Error(`Status ${res.status}`);
+      const data: Promotion[] = await res.json();
+      setPromotions(data || []);
+    } catch (err) {
+      console.error("Failed to load promotions:", err);
+      setPromotions([]);
+    } finally {
+      setPromosLoading(false);
+    }
+  };
+
+  // Initial load
+  useEffect(() => {
+    loadPromotions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleCreate = async () => {
     setError(null);
@@ -91,10 +116,12 @@ export default function PromotionsPage() {
         promotionId = created.id;
         setLastPromotionId(promotionId);
         setSuccess(`Promotion created (ID: ${promotionId}).`);
+        await loadPromotions();
       }
 
       // Now send the promotion email
       const result = await sendPromotion(promotionId);
+      await loadPromotions();
       setSuccess(`Promotion sent to ${result.emailsSent} subscribed user(s).`);
     } catch (err: any) {
       setError(err.message || "Failed to send promotion.");
@@ -175,20 +202,11 @@ export default function PromotionsPage() {
           <div className="button-row">
             <button
               type="button"
-              onClick={handleCreate}
-              disabled={busy}
-              className="btn btn-purple"
-            >
-              {busy ? "Working…" : "Add Promotion"}
-            </button>
-
-            <button
-              type="button"
               onClick={handleSend}
               disabled={busy}
               className="btn btn-green"
             >
-              {busy ? "Working…" : "Send Promotion"}
+              {busy ? "Working…" : "Create and Send Promotion"}
             </button>
 
             <button
@@ -200,6 +218,24 @@ export default function PromotionsPage() {
             </button>
           </div>
         </form>
+        <section className="promotions-list mt-8">
+          <h2 className="promo-subtitle">Current Promotions</h2>
+          {promosLoading ? (
+            <p>Loading promotions…</p>
+          ) : promotions.length === 0 ? (
+            <p>No promotions found.</p>
+          ) : (
+            <ul className="promo-list">
+              {promotions.map((p) => (
+                <li key={p.id} className="promo-item">
+                  <strong>{p.code}</strong>
+                  <span className="promo-meta"> — {p.discountPercent}%</span>
+                  <span className="promo-meta"> — {p.startDate} to {p.endDate}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       </div>
     </main>
   );
