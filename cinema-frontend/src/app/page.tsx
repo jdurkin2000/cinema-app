@@ -2,125 +2,74 @@
 
 import Image from "next/image";
 import "./page.css";
-import logo from "@/assets/logo.png";
-import { MovieQueryParams, useMovies } from "@/libs/cinemaApi";
 import Movie from "@/models/movie";
-import { FormEvent, ReactElement, useState, useEffect } from "react";
+import { ReactElement, useState, useEffect } from "react";
 import Link from "next/link";
-import { getToken, clearToken } from "@/libs/authStore";
-import { createShowroom, scheduleMovie, scheduleMovieWithShowroom } from "@/libs/showingsApi";
-import { Showroom } from "@/models/shows";
-
-function decodeJwt(token: string) {
-  try {
-    const base64Url = token.split(".")[1];
-    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split("")
-        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-        .join("")
-    );
-    return JSON.parse(jsonPayload);
-  } catch {
-    return null;
-  }
-}
+import {
+  getCurrentlyShowingMovies,
+  getUpcomingShowingMovies,
+} from "@/libs/showingsApi";
 
 export default function Home() {
-  const [filterParams, setFilterParams] = useState<MovieQueryParams>({});
-  const { movies, status } = useMovies(filterParams);
-
-  const [username, setUsername] = useState<string | null>(null);
+  const [nowShowingMovies, setNowShowingMovies] = useState<Movie[]>([]);
+  const [upcomingMovies, setUpcomingMovies] = useState<Movie[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const token = getToken();
-    if (token) {
-      const decoded = decodeJwt(token);
-      if (decoded) {
-        setUsername(decoded.name || decoded.sub);
+    const fetchMovies = async () => {
+      try {
+        setLoading(true);
+        const [showing, upcoming] = await Promise.all([
+          getCurrentlyShowingMovies(),
+          getUpcomingShowingMovies(),
+        ]);
+        setNowShowingMovies(showing);
+        setUpcomingMovies(upcoming);
+        setError(null);
+      } catch (err) {
+        console.error("Error fetching movies:", err);
+        setError("Failed to load movies");
+      } finally {
+        setLoading(false);
       }
-    }
+    };
+
+    fetchMovies();
   }, []);
-
-  const handleLogout = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault();
-    clearToken();
-    setUsername(null);
-    window.location.reload();
-  };
-
-  const handleMovieSearch = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-
-    const titleValue = (formData.get("titleInput") as string)?.trim();
-    const genresValue = (formData.get("genreInput") as string)?.trim();
-
-    const genres = genresValue
-      ? genresValue.split(/[^a-zA-Z0-9]+/).filter(Boolean)
-      : undefined;
-
-    if (!titleValue && !genres) return;
-
-    setFilterParams({
-      title: titleValue || undefined,
-      genres,
-    });
-  };
-
-  const displayFilters = filterParams.title || filterParams.genres?.length;
-
-  const filteringByString = [
-    filterParams.title && `Title - ${filterParams.title}`,
-    filterParams.genres?.length &&
-      `Genres - ${filterParams.genres.join(", ")}`,
-  ]
-    .filter(Boolean)
-    .join(" | ");
 
   return (
     <div className="content">
-      <form className="movie-search-form" onSubmit={handleMovieSearch}>
+      <form className="movie-search-form" onSubmit={() => {}}>
         <input
           className="movie-search-input"
           type="text"
           placeholder="Enter a movie"
-          name="titleInput"
+          disabled
         />
         <input
           className="movie-search-input"
           type="text"
           placeholder="Enter any amount of genres"
-          name="genreInput"
+          disabled
         />
-        <button className="movie-search-submit" type="submit">
+        <button className="movie-search-submit" type="submit" disabled>
           Submit
         </button>
       </form>
-        {displayFilters && (
-          <div className="filter-display">
-            <span>{filteringByString}</span>
-            <button
-              className="remove-filters-button"
-              onClick={() => setFilterParams({})}
-            >
-              Remove Filters
-            </button>
-          </div>
-        )}
-      
 
-      {status.currentState === "Success" ? (
+      {loading ? (
+        <p className="now-showing">Loading movies...</p>
+      ) : error ? (
+        <p className="now-showing text-red-500">{error}</p>
+      ) : (
         <>
           <p className="now-showing">Now Showing</p>
-          {getMovieList(movies.filter((movie) => !movie.upcoming))}
+          {getMovieList(nowShowingMovies)}
 
           <div className="now-showing">Upcoming</div>
-          {getMovieList(movies.filter((movie) => movie.upcoming))}
+          {getMovieList(upcomingMovies)}
         </>
-      ) : (
-        <p className="now-showing text-red-500">{status.message}</p>
       )}
     </div>
   );
@@ -145,14 +94,3 @@ function getMovieList(movies: Movie[]): ReactElement {
     </ol>
   );
 }
-
-function populateShowrooms(movies: Movie[]) {
-  const showroom: Showroom = {id: "", showtimes: []}
-
-  movies.forEach(movie => {
-    scheduleMovieWithShowroom(movie, movie.showtimes[0], showroom);
-  });
-
-  createShowroom(showroom);
-}
-
