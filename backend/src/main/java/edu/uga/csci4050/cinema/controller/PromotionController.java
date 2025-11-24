@@ -59,9 +59,6 @@ public class PromotionController {
         if (body.endDate.isBefore(LocalDate.now())) {
             return ResponseEntity.badRequest().body(Map.of("message", "End date cannot be in the past"));
         }
-        if (body.discountPercent < 1 || body.discountPercent > 100) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Discount percent must be between 1 and 100"));
-        }
 
         Promotion p = new Promotion();
         p.setCode(code);
