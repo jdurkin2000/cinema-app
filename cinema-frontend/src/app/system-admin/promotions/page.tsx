@@ -67,15 +67,34 @@ export default function PromotionsPage() {
   const handleSend = async () => {
     setError(null);
     setSuccess(null);
-
-    if (!lastPromotionId) {
-      setError("You must create a promotion first.");
-      return;
-    }
-
     setBusy(true);
     try {
-      const result = await sendPromotion(lastPromotionId);
+      let promotionId = lastPromotionId;
+
+      // If we don't have a created promotion yet, create it from the form data
+      if (!promotionId) {
+        const validation = validate();
+        if (validation) {
+          setError(validation);
+          setBusy(false);
+          return;
+        }
+
+        const payload: CreatePromotionPayload = {
+          code: code.trim(),
+          startDate,
+          endDate,
+          discountPercent: Number(discountPercent),
+        };
+
+        const created = await createPromotion(payload);
+        promotionId = created.id;
+        setLastPromotionId(promotionId);
+        setSuccess(`Promotion created (ID: ${promotionId}).`);
+      }
+
+      // Now send the promotion email
+      const result = await sendPromotion(promotionId);
       setSuccess(`Promotion sent to ${result.emailsSent} subscribed user(s).`);
     } catch (err: any) {
       setError(err.message || "Failed to send promotion.");
