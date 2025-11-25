@@ -8,6 +8,7 @@ import {
   sendPromotion,
   Promotion,
 } from "@/libs/cinemaApi";
+import { formatDate } from "@/utils/dateTimeUtil";
 import "./promotions.css";
 
 export default function PromotionsPage() {
@@ -81,7 +82,9 @@ export default function PromotionsPage() {
       const promotion = await createPromotion(payload);
       setLastPromotionId(promotion.id);
 
-      setSuccess(`Promotion created (ID: ${promotion.id}). You can now send it.`);
+      setSuccess(
+        `Promotion created (ID: ${promotion.id}). You can now send it.`
+      );
     } catch (err: any) {
       setError(err.message || "Failed to create promotion.");
     } finally {
@@ -230,7 +233,10 @@ export default function PromotionsPage() {
                 <li key={p.id} className="promo-item">
                   <strong>{p.code}</strong>
                   <span className="promo-meta"> — {p.discountPercent}%</span>
-                  <span className="promo-meta"> — {p.startDate} to {p.endDate}</span>
+                  <span className="promo-meta">
+                    {" "}
+                    — {formatDate(p.startDate)} to {formatDate(p.endDate)}
+                  </span>
                 </li>
               ))}
             </ul>

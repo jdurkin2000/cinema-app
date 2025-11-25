@@ -1,3 +1,9 @@
+/**
+ * Movie model - matches backend MovieItem.
+ *
+ * Note: showtimes, released, and upcoming fields have been removed.
+ * Use the Showtime/Showroom subsystem to manage showtimes.
+ */
 export default interface Movie {
   id: string;
   title: string;
@@ -10,7 +16,4 @@ export default interface Movie {
   poster: string;
   trailer: string;
   rating: string;
-  showtimes: Date[];
-  released: Date;
-  upcoming: boolean;
 }

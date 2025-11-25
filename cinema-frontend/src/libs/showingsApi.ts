@@ -1,29 +1,36 @@
 import { Showroom, Showtime } from "@/models/shows";
 import Movie from "@/models/movie";
 import axios from "axios";
+import { toISOString, ensureDate } from "@/utils/dateTimeUtil";
 
 const MOVIE_DURATION_MS = 3 * 60 * 60 * 1000; // 3 hours
 const SHOWROOMS_API = "http://localhost:8080/api/showrooms";
 const MOVIES_API = "http://localhost:8080/api/movies";
 
-function moviesOverlap(a: Date, b: Date): boolean {
-  const startA = a.getTime();
+/**
+ * Helper function to check if two movie showtimes overlap
+ * Takes Date objects or ISO strings
+ */
+function moviesOverlap(a: Date | string, b: Date | string): boolean {
+  const dateA = ensureDate(a);
+  const dateB = ensureDate(b);
+  if (!dateA || !dateB) return false;
+
+  const startA = dateA.getTime();
   const endA = startA + MOVIE_DURATION_MS;
 
-  const startB = b.getTime();
+  const startB = dateB.getTime();
   const endB = startB + MOVIE_DURATION_MS;
 
   return startA < endB && startB < endA;
 }
 
 export async function createShowroom(showroom: Showroom): Promise<Showroom> {
-  // Convert Date objects to ISO strings so backend parses them correctly
+  // Showtimes start field is already a string (ISO-8601) from model
   const payload = {
     ...showroom,
-    showtimes: showroom.showtimes?.map((st) => ({
-      ...st,
-      start: st.start instanceof Date ? st.start.toISOString() : st.start,
-    })),
+    // Showtimes are already in correct format (start is string)
+    showtimes: showroom.showtimes,
   };
 
   const response = await axios.post<Showroom>(SHOWROOMS_API, payload);
@@ -45,13 +52,8 @@ export async function getShowtimesForMovie(movie: Movie): Promise<Showtime[]> {
     res.data.forEach((showroom) => {
       showroom.showtimes?.forEach((st) => {
         if (st.movieId === movie.id) {
-          // Ensure `start` is a Date on the client
-          const converted: Showtime = {
-            ...st,
-            start:
-              st.start instanceof Date ? st.start : new Date(String(st.start)),
-          };
-          result.push(converted);
+          // start is already a string (ISO-8601) from backend
+          result.push(st);
         }
       });
     });
@@ -140,10 +142,10 @@ export async function scheduleMovie(
   showroomId?: string
 ): Promise<boolean> {
   try {
-    // If showroomId provided, post to that showroom's showtimes endpoint
+    // Convert Date to ISO string for backend
     const payload = {
       movieId: movie.id,
-      start: date.toISOString(),
+      start: toISOString(date),
       bookedSeats: [],
     };
 
@@ -155,12 +157,12 @@ export async function scheduleMovie(
       return true;
     }
 
-    // No showroomId: pick a showroom by fetching list and choosing first that has no overlap
+    // No showroomId: pick a showroom by fetching list and choosing first without overlap
     const res = await axios.get<Showroom[]>(SHOWROOMS_API);
     for (const showroom of res.data) {
-      // check overlap by fetching its showtimes
+      // Check overlap with existing showtimes (start is ISO string)
       const hasOverlap = showroom.showtimes?.some((st) =>
-        moviesOverlap(new Date(String(st.start)), date)
+        moviesOverlap(st.start, date)
       );
       if (!hasOverlap) {
         await axios.post<Showroom>(
@@ -185,10 +187,10 @@ export async function scheduleMovieWithShowroom(
   showroom: Showroom
 ): Promise<boolean> {
   try {
-    // Reuse backend endpoint for adding showtime to a specific showroom
+    // Convert Date to ISO string for backend
     const payload = {
       movieId: movie.id,
-      start: date.toISOString(),
+      start: toISOString(date),
       bookedSeats: [],
     };
     await axios.post<Showroom>(

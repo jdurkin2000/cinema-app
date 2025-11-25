@@ -1,7 +1,12 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { dateReviver, formatDateTime, Showroom, useMovies } from "@/libs/cinemaApi";
+import {
+  dateReviver,
+  formatDateTime,
+  Showroom,
+  useMovies,
+} from "@/libs/cinemaApi";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
@@ -20,7 +25,12 @@ interface SeatProps {
 }
 
 //Single Seat
-const Seat: React.FC<SeatProps> = ({ seatNumber, isSelected, isUnavailable, onSelect }) => {
+const Seat: React.FC<SeatProps> = ({
+  seatNumber,
+  isSelected,
+  isUnavailable,
+  onSelect,
+}) => {
   let seatClass = "";
 
   if (isUnavailable) {
@@ -28,11 +38,12 @@ const Seat: React.FC<SeatProps> = ({ seatNumber, isSelected, isUnavailable, onSe
   } else if (isSelected) {
     seatClass = "bg-purple-500 text-white"; // Selected seat style
   } else {
-    seatClass = "bg-gray-600 hover:bg-gray-500 cursor-pointer transition-all duration-200 hover:scale-110"; // Available seat style
+    seatClass =
+      "bg-gray-600 hover:bg-gray-500 cursor-pointer transition-all duration-200 hover:scale-110"; // Available seat style
   }
 
   // Determine the handler: only call onSelect if the seat is NOT unavailable
-  const handleClick = isUnavailable ? () => { } : () => onSelect(seatNumber);
+  const handleClick = isUnavailable ? () => {} : () => onSelect(seatNumber);
 
   return (
     <div
@@ -58,8 +69,10 @@ const rows = [
 export default function Home() {
   const params = useSearchParams();
   const raw = params.get("showtime");
-  const showtime: Showtime = raw? JSON.parse(decodeURIComponent(raw), dateReviver) : null;
-  const UNAVAILABLE_SEATS = showtime?.bookedSeats || []
+  const showtime: Showtime = raw
+    ? JSON.parse(decodeURIComponent(raw), dateReviver)
+    : null;
+  const UNAVAILABLE_SEATS = showtime?.bookedSeats || [];
 
   const { movies, status } = useMovies({ id: showtime.movieId || "0" });
 
@@ -87,13 +100,15 @@ export default function Home() {
     fetch(`http://localhost:8080/api/showrooms/${showtime?.roomId}/showtimes`)
       .then((res) => res.json())
       .then((data: Showroom) => setShowroom(data))
-      .catch(() => setShowroom({id: "error"}));
+      .catch(() => setShowroom({ id: "error", showtimes: [] }));
   }, [showtime?.roomId]);
 
   const handleSelectSeat = (seatNumber: string) => {
     // Prevent selection if seat is unavailable
     if (UNAVAILABLE_SEATS.includes(seatNumber)) {
-      setSelectionError(`Seat ${seatNumber} is already booked and unavailable.`);
+      setSelectionError(
+        `Seat ${seatNumber} is already booked and unavailable.`
+      );
       return;
     }
 
@@ -118,21 +133,27 @@ export default function Home() {
     });
   };
 
-  const handleTicketChange = (type: "adult" | "child" | "senior", value: string) => {
+  const handleTicketChange = (
+    type: "adult" | "child" | "senior",
+    value: string
+  ) => {
     const quantity = Math.max(0, parseInt(value) || 0); // Ensure quantity is non-negative
     setTickets((prevTickets) => {
       const newTickets = { ...prevTickets, [type]: quantity };
-      const newTotalTickets = newTickets.adult + newTickets.child + newTickets.senior;
+      const newTotalTickets =
+        newTickets.adult + newTickets.child + newTickets.senior;
 
       // If the new total is less than the currently selected seats, trim the selectedSeats list
       if (newTotalTickets < selectedSeats.length) {
         // Filter out any seats that are now beyond the new total, ensuring unavailable seats aren't included
         const filteredSeats = selectedSeats
-          .filter(seat => !UNAVAILABLE_SEATS.includes(seat)) // Exclude unavailable seats from being kept (if somehow selected)
+          .filter((seat) => !UNAVAILABLE_SEATS.includes(seat)) // Exclude unavailable seats from being kept (if somehow selected)
           .slice(0, newTotalTickets);
 
         setSelectedSeats(filteredSeats);
-        setSelectionError("Seat selection was automatically adjusted to match ticket count.");
+        setSelectionError(
+          "Seat selection was automatically adjusted to match ticket count."
+        );
       } else {
         setSelectionError("");
       }
@@ -193,14 +214,18 @@ export default function Home() {
             className="w-16 p-1 text-white text-center rounded"
           />
         </div>
-        <p className="text-base font-bold pt-2">Total Tickets: {totalTickets}</p>
+        <p className="text-base font-bold pt-2">
+          Total Tickets: {totalTickets}
+        </p>
       </div>
       {/* ==================================== */}
 
       <div className="flex flex-col items-center space-y-4">
         {/* Error message for seat selection */}
         {selectionError && (
-          <p className="text-red-400 text-center font-semibold">{selectionError}</p>
+          <p className="text-red-400 text-center font-semibold">
+            {selectionError}
+          </p>
         )}
 
         <div
@@ -220,8 +245,9 @@ export default function Home() {
               {row.map((seatNumber, seatIndex) => (
                 <div
                   key={seatNumber}
-                  className={`${seatIndex === 1 || seatIndex === 5 ? "mr-4" : ""
-                    }`}
+                  className={`${
+                    seatIndex === 1 || seatIndex === 5 ? "mr-4" : ""
+                  }`}
                 >
                   <Seat
                     seatNumber={seatNumber}
@@ -247,7 +273,8 @@ export default function Home() {
             <span>Selected</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-5 h-4 bg-red-700 rounded-t-md"></div> {/* Updated color to match code */}
+            <div className="w-5 h-4 bg-red-700 rounded-t-md"></div>{" "}
+            {/* Updated color to match code */}
             <span>Unavailable</span>
           </div>
         </div>
@@ -255,7 +282,8 @@ export default function Home() {
 
       <div className="text-center">
         <p>
-          You have selected {selectedSeats.length} of {totalTickets} required seats:
+          You have selected {selectedSeats.length} of {totalTickets} required
+          seats:
         </p>
       </div>
 
@@ -263,9 +291,10 @@ export default function Home() {
         className="bg-purple-500 hover:bg-purple-600 transition-colors rounded-2xl px-4 py-2 text-2xl"
         disabled={selectedSeats.length !== totalTickets || totalTickets === 0}
         onClick={() => {
-          if (selectedSeats.length !== totalTickets || totalTickets === 0) return;
+          if (selectedSeats.length !== totalTickets || totalTickets === 0)
+            return;
           const params = new URLSearchParams();
-          if (raw) params.set("showtime", raw)
+          if (raw) params.set("showtime", raw);
           params.set("seats", selectedSeats.join(","));
           params.set("adult", String(tickets.adult));
           params.set("child", String(tickets.child));

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Movie from "@/models/movie";
-import Error from "next/error";
+import { dateReviver, formatDateTime } from "@/utils/dateTimeUtil";
+import { Showroom as ShowroomModel } from "@/models/shows";
 
 const baseApiString = "http://localhost:8080/api/movies";
 
@@ -45,21 +46,7 @@ export function getErrorMessage(status?: number): string {
   }
 }
 
-// Regex to detect ISO 8601 UTC timestamps
-const isoDateRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z)?$/;
-
-// Reviver function that converts ISO strings to Date
-export function dateReviver(key: string, value: unknown) {
-  if (typeof value === "string" && isoDateRegex.test(value)) {
-    return new Date(value);
-  }
-  if (Array.isArray(value)) {
-    return value.map((v) =>
-      typeof v === "string" && isoDateRegex.test(v) ? new Date(v) : v
-    );
-  }
-  return value;
-}
+// Note: dateReviver moved to @/utils/dateTimeUtil for centralized date handling
 
 /**
  * Custom React hook to fetch movie data from the backend API using the provided query parameters.
@@ -96,17 +83,14 @@ export function useMovies(params: MovieQueryParams = {}) {
       id: "-1",
       title: "Loading movie data..",
       poster: "/poster_loading.png",
-      synopsis: "Skibidi Toilet Dubai Chocolate Labubu",
+      synopsis: "Loading...",
       trailer: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-      genres: ["Weeb", "Horror"],
-      cast: ["Spongebob", "Patrick"],
-      director: "John Cena",
-      producer: "Danny Devito",
-      reviews: ["Yes", "Cool"],
+      genres: ["Loading"],
+      cast: ["Loading"],
+      director: "Loading",
+      producer: "Loading",
+      reviews: ["Loading"],
       rating: "NR",
-      showtimes: [],
-      released: new Date(),
-      upcoming: false,
     },
   ];
 
@@ -123,7 +107,9 @@ export function useMovies(params: MovieQueryParams = {}) {
 
     axios
       .get<Movie | Movie[]>(url, {
-        transformResponse: [(data) => (data ? JSON.parse(data, dateReviver) : null)],
+        transformResponse: [
+          (data) => (data ? JSON.parse(data, dateReviver) : null),
+        ],
       })
       .then((res) => {
         // If res.data is an array, use it; if single movie, wrap in array
@@ -131,11 +117,14 @@ export function useMovies(params: MovieQueryParams = {}) {
         const dataArray = Array.isArray(res.data)
           ? res.data
           : res.data
-            ? [res.data]
-            : [];
+          ? [res.data]
+          : [];
 
         if (dataArray.length === 0) {
-          setStatus({ currentState: "Not Found", message: "Movies not found." });
+          setStatus({
+            currentState: "Not Found",
+            message: "Movies not found.",
+          });
           return;
         }
 
@@ -161,20 +150,7 @@ export function useMovies(params: MovieQueryParams = {}) {
   return { movies, status };
 }
 
-/**
- * Formats a JavaScript `Date` object into a localized string using US English conventions.
- *
- * The output includes both the date and time in short format.
- *
- * @param date - The `Date` object to format.
- * @returns A string representing the formatted date and time.
- */
-export function formatDateTime(date: Date): string {
-  return date.toLocaleString("en-US", {
-    dateStyle: "short",
-    timeStyle: "short",
-  });
-}
+// Note: formatDateTime moved to @/utils/dateTimeUtil for centralized date handling
 
 function buildUrlString(params: MovieQueryParams): string {
   let query = baseApiString;
@@ -192,26 +168,25 @@ function buildUrlString(params: MovieQueryParams): string {
   return query;
 }
 
-function buildError(error: Error): ErrorInfo {
-  if (!axios.isAxiosError(error))
-    return { status: null, message: "Unexpected error" };
-
-  if (!error.response)
-    return {
-      status: null,
-      message: "Network error. Please check your connection",
-    };
-
-  const status = error.response.status;
-  const message = error.response.data?.message;
-  return {
-    status: status,
-    message: message || getErrorMessage(status),
-  };
+function buildError(error: unknown): ErrorInfo {
+  if (axios.isAxiosError(error)) {
+    const status = error.response?.status ?? null;
+    const data = error.response?.data as { message?: string } | undefined;
+    const msg = data?.message;
+    return { status, message: msg || getErrorMessage(status ?? undefined) };
+  }
+  if (error instanceof Error) {
+    return { status: null, message: error.message };
+  }
+  return { status: null, message: "Unexpected error" };
 }
 
 // ------- Create Movie (Admin) -------
 
+/**
+ * Movie creation payload - matches backend MovieDtos.CreateRequest
+ * Note: showtimes, released, and upcoming fields removed (managed via Showtime/Showroom subsystem)
+ */
 export type CreateMoviePayload = {
   title: string;
   poster: string;
@@ -223,36 +198,27 @@ export type CreateMoviePayload = {
   producer?: string;
   synopsis?: string;
   reviews?: string[];
-  showtimes?: (string | Date)[];
-  released?: string | Date;
-  upcoming?: boolean;
 };
 
 /**
  * Create a new movie (Admin only).
  * Pass a JWT via opts.token or ensure it's in localStorage as "authToken".
+ *
+ * Note: To schedule showtimes for this movie, use the showrooms API after creation.
  */
 export async function createMovie(
   payload: CreateMoviePayload,
   opts?: { token?: string }
 ): Promise<Movie> {
   try {
-    // Normalize dates to ISO strings so Spring can parse LocalDate/LocalDateTime
-    const toIso = (v: unknown) =>
-      v instanceof Date ? v.toISOString() : typeof v === "string" ? v : undefined;
-
-    const body = {
-      ...payload,
-      released: payload.released ? toIso(payload.released) : undefined,
-      showtimes: payload.showtimes?.map(toIso).filter(Boolean),
-    };
-
     // Prefer explicit token, fallback to localStorage (client-side)
     const token =
       opts?.token ??
-      (typeof window !== "undefined" ? localStorage.getItem("authToken") : null);
+      (typeof window !== "undefined"
+        ? localStorage.getItem("authToken")
+        : null);
 
-    const res = await axios.post<Movie>(baseApiString, body, {
+    const res = await axios.post<Movie>(baseApiString, payload, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       transformResponse: [
         (data) => (data ? JSON.parse(data, dateReviver) : null),
@@ -260,7 +226,7 @@ export async function createMovie(
     });
 
     return res.data;
-  } catch (err: any) {
+  } catch (err: unknown) {
     // build the error info
     const info = buildError(err);
 
@@ -269,7 +235,6 @@ export async function createMovie(
     const e: JsError & { status?: number } = new globalThis.Error(info.message);
     e.status = info.status ?? undefined;
     throw e;
-
   }
 }
 
@@ -285,8 +250,8 @@ export type Promotion = {
 
 export type CreatePromotionPayload = {
   code: string;
-  startDate: string;      // "yyyy-mm-dd"
-  endDate: string;        // "yyyy-mm-dd"
+  startDate: string; // "yyyy-mm-dd"
+  endDate: string; // "yyyy-mm-dd"
   discountPercent: number;
 };
 
@@ -304,14 +269,16 @@ export async function createPromotion(
     // Prefer explicit token, fallback to localStorage (client-side)
     const token =
       opts?.token ??
-      (typeof window !== "undefined" ? localStorage.getItem("authToken") : null);
+      (typeof window !== "undefined"
+        ? localStorage.getItem("authToken")
+        : null);
 
     const res = await axios.post<Promotion>(promoApiBase, payload, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
 
     return res.data;
-  } catch (err: any) {
+  } catch (err: unknown) {
     const info = buildError(err);
 
     type JsError = InstanceType<typeof globalThis.Error>;
@@ -331,7 +298,9 @@ export async function sendPromotion(
   try {
     const token =
       opts?.token ??
-      (typeof window !== "undefined" ? localStorage.getItem("authToken") : null);
+      (typeof window !== "undefined"
+        ? localStorage.getItem("authToken")
+        : null);
 
     const res = await axios.post<{ promotionId: string; emailsSent: number }>(
       `${promoApiBase}/${promotionId}/send`,
@@ -342,7 +311,7 @@ export async function sendPromotion(
     );
 
     return res.data;
-  } catch (err: any) {
+  } catch (err: unknown) {
     const info = buildError(err);
 
     type JsError = InstanceType<typeof globalThis.Error>;
@@ -354,11 +323,13 @@ export async function sendPromotion(
 
 // ------- Showrooms -------
 
-export type Showroom = {
-  id: string;
-  name?: string;
-  showtimes?: any[];
-};
+// legacy Showroom interface removed; using ShowroomModel instead
+export type Showroom = ShowroomModel;
+// removed stray catch lines that were outside any try block
+// removed stray catch lines that were outside any try block
+// removed stray catch lines that were outside any try block
+// removed stray catch lines that were outside any try block
+// removed stray catch lines that were outside any try block
 
 const showroomApiBase = "http://localhost:8080/api/showrooms";
 
@@ -369,7 +340,7 @@ export async function getShowrooms(): Promise<Showroom[]> {
   try {
     const res = await axios.get<Showroom[]>(showroomApiBase);
     return res.data;
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Error fetching showrooms:", err);
     return [];
   }
@@ -387,13 +358,15 @@ export async function deleteShowtimeFromShowroom(
   try {
     const token =
       opts?.token ??
-      (typeof window !== "undefined" ? localStorage.getItem("authToken") : null);
+      (typeof window !== "undefined"
+        ? localStorage.getItem("authToken")
+        : null);
 
     await axios.delete(`${showroomApiBase}/${showroomId}/showtimes`, {
       data: payload,
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     const info = buildError(err);
     type JsError = InstanceType<typeof globalThis.Error>;
     const e: JsError & { status?: number } = new globalThis.Error(info.message);
@@ -410,10 +383,12 @@ export async function deleteShowtimeFromShowroom(
 export async function getMovie(movieId: string): Promise<Movie> {
   try {
     const res = await axios.get<Movie>(`${baseApiString}/${movieId}`, {
-      transformResponse: [(data) => (data ? JSON.parse(data, dateReviver) : null)],
+      transformResponse: [
+        (data) => (data ? JSON.parse(data, dateReviver) : null),
+      ],
     });
     return res.data;
-  } catch (err: any) {
+  } catch (err: unknown) {
     const info = buildError(err);
     type JsError = InstanceType<typeof globalThis.Error>;
     const e: JsError & { status?: number } = new globalThis.Error(info.message);
@@ -424,6 +399,8 @@ export async function getMovie(movieId: string): Promise<Movie> {
 
 /**
  * Update an existing movie (Admin only).
+ *
+ * Note: To update showtimes, use the showrooms API directly.
  */
 export async function updateMovie(
   movieId: string,
@@ -431,26 +408,21 @@ export async function updateMovie(
   opts?: { token?: string }
 ): Promise<Movie> {
   try {
-    const toIso = (v: unknown) =>
-      v instanceof Date ? v.toISOString() : typeof v === "string" ? v : undefined;
-
-    const body = {
-      ...payload,
-      released: payload.released ? toIso(payload.released) : undefined,
-      showtimes: payload.showtimes?.map(toIso).filter(Boolean),
-    };
-
     const token =
       opts?.token ??
-      (typeof window !== "undefined" ? localStorage.getItem("authToken") : null);
+      (typeof window !== "undefined"
+        ? localStorage.getItem("authToken")
+        : null);
 
-    const res = await axios.put<Movie>(`${baseApiString}/${movieId}`, body, {
+    const res = await axios.put<Movie>(`${baseApiString}/${movieId}`, payload, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
-      transformResponse: [(data) => (data ? JSON.parse(data, dateReviver) : null)],
+      transformResponse: [
+        (data) => (data ? JSON.parse(data, dateReviver) : null),
+      ],
     });
 
     return res.data;
-  } catch (err: any) {
+  } catch (err: unknown) {
     const info = buildError(err);
     type JsError = InstanceType<typeof globalThis.Error>;
     const e: JsError & { status?: number } = new globalThis.Error(info.message);
@@ -458,3 +430,6 @@ export async function updateMovie(
     throw e;
   }
 }
+
+// Re-export centralized date utilities for legacy import paths in pages/components
+export { dateReviver, formatDateTime };

@@ -1,8 +1,14 @@
 package edu.uga.csci4050.cinema.controller.dto;
 
 import jakarta.validation.constraints.*;
-import java.time.LocalDate;
 
+/**
+ * DTOs for Promotion operations.
+ * 
+ * Note: Dates are provided as strings and converted to Instant by the
+ * controller
+ * using DateTimeUtil to ensure proper timezone handling.
+ */
 public class PromotionDtos {
 
     public static class CreatePromotionRequest {
@@ -10,10 +16,10 @@ public class PromotionDtos {
         public String code;
 
         @NotNull
-        public LocalDate startDate;
+        public String startDate; // Format: "yyyy-MM-dd"
 
         @NotNull
-        public LocalDate endDate;
+        public String endDate; // Format: "yyyy-MM-dd"
 
         @Min(1)
         @Max(100)

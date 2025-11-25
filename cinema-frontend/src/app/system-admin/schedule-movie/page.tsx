@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { formatDateTime } from "@/utils/dateTimeUtil";
 import Movie from "@/models/movie";
 import { Showroom, Showtime } from "@/models/shows";
 import { useMovies } from "@/libs/cinemaApi";
@@ -137,7 +138,8 @@ export default function ScheduleMoviePage() {
     if (newStart.getTime() <= now.getTime()) {
       setState((prev) => ({
         ...prev,
-        error: "Cannot schedule a showtime in the past. Please choose a future date and time.",
+        error:
+          "Cannot schedule a showtime in the past. Please choose a future date and time.",
       }));
       return;
     }
@@ -171,9 +173,9 @@ export default function ScheduleMoviePage() {
     try {
       const newShowtime: Showtime = {
         movieId: state.selectedMovieId,
-        start: new Date(state.selectedTime),
+        start: new Date(state.selectedTime).toISOString(),
         bookedSeats: [],
-        roomId: showroom.id
+        roomId: showroom.id,
       };
 
       const token =
@@ -200,7 +202,9 @@ export default function ScheduleMoviePage() {
         selectedMovieId: null,
         selectedTime: "",
         loading: false,
-        success: `Successfully scheduled "${selectedMovie?.title}" in Showroom ${selectedShowroom?.id} for ${state.selectedTime}`,
+        success: `Scheduled "${selectedMovie?.title}" in Showroom ${
+          selectedShowroom?.id
+        } for ${formatDateTime(newShowtime.start)}`,
       }));
 
       // Refresh showrooms
@@ -257,8 +261,9 @@ export default function ScheduleMoviePage() {
               state.showrooms.map((showroom) => (
                 <button
                   key={showroom.id}
-                  className={`showroom-card ${state.selectedShowroomId === showroom.id ? "active" : ""
-                    }`}
+                  className={`showroom-card ${
+                    state.selectedShowroomId === showroom.id ? "active" : ""
+                  }`}
                   onClick={() => handleShowroomSelect(showroom.id)}
                 >
                   <div className="showroom-id">Showroom {showroom.id}</div>
@@ -282,8 +287,9 @@ export default function ScheduleMoviePage() {
                 {state.movies.map((movie) => (
                   <button
                     key={movie.id}
-                    className={`movie-card ${state.selectedMovieId === movie.id ? "active" : ""
-                      }`}
+                    className={`movie-card ${
+                      state.selectedMovieId === movie.id ? "active" : ""
+                    }`}
                     onClick={() => handleMovieSelect(movie.id)}
                   >
                     <img src={movie.poster} alt={movie.title} />
@@ -333,7 +339,9 @@ export default function ScheduleMoviePage() {
                 </div>
                 <div className="summary-item">
                   <span className="label">Showtime:</span>
-                  <span className="value">{state.selectedTime}</span>
+                  <span className="value">
+                    {formatDateTime(state.selectedTime)}
+                  </span>
                 </div>
               </div>
               <button

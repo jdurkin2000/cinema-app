@@ -27,77 +27,99 @@ public class ProfileController {
     private final MailService mail;
 
     public ProfileController(UserRepository users, PasswordEncoder encoder, CryptoService crypto, MailService mail) {
-        this.users=users; this.encoder=encoder; this.crypto=crypto; this.mail=mail;
+        this.users = users;
+        this.encoder = encoder;
+        this.crypto = crypto;
+        this.mail = mail;
     }
 
-    private Optional<User> me(Authentication a){ return users.findByEmail(a.getName()); }
+    private Optional<User> me(Authentication a) {
+        return users.findByEmail(a.getName());
+    }
 
     @GetMapping
-    public ResponseEntity<?> get(Authentication auth){
+    public ResponseEntity<?> get(Authentication auth) {
         var u = me(auth).orElse(null);
-    if (u == null) return ResponseEntity.status(401).build();
+        if (u == null)
+            return ResponseEntity.status(401).build();
 
-    Map<String, Object> resp = new HashMap<>();
-    resp.put("email", u.getEmail());
-    resp.put("name", u.getName());
-    resp.put("role", u.getRole() != null ? u.getRole().name() : "USER");
-    resp.put("promotionsOptIn", u.isPromotionsOptIn());
-    resp.put("address", u.getAddress() != null ? u.getAddress() : Map.of());
+        Map<String, Object> resp = new HashMap<>();
+        resp.put("email", u.getEmail());
+        resp.put("name", u.getName());
+        resp.put("role", u.getRole() != null ? u.getRole().name() : "USER");
+        resp.put("promotionsOptIn", u.isPromotionsOptIn());
+        resp.put("address", u.getAddress() != null ? u.getAddress() : Map.of());
 
-    List<Map<String, Object>> cards = u.getPaymentCards().stream().map(c -> {
-        Map<String, Object> m = new HashMap<>();
-        m.put("id", c.getId() != null ? c.getId() : "");
-        m.put("brand", c.getBrand() != null ? c.getBrand() : "");
-        m.put("last4", c.getLast4() != null ? c.getLast4() : "");
-        m.put("expMonth", c.getExpMonth());
-        m.put("expYear", c.getExpYear());
-        m.put("billingName", c.getBillingName() != null ? c.getBillingName() : "");
-        m.put("billingAddress", c.getBillingAddress() != null ? c.getBillingAddress() : Map.of());
-        return m;
-    }).toList();
+        List<Map<String, Object>> cards = u.getPaymentCards().stream().map(c -> {
+            Map<String, Object> m = new HashMap<>();
+            m.put("id", c.getId() != null ? c.getId() : "");
+            m.put("brand", c.getBrand() != null ? c.getBrand() : "");
+            m.put("last4", c.getLast4() != null ? c.getLast4() : "");
+            m.put("expMonth", c.getExpMonth());
+            m.put("expYear", c.getExpYear());
+            m.put("billingName", c.getBillingName() != null ? c.getBillingName() : "");
+            m.put("billingAddress", c.getBillingAddress() != null ? c.getBillingAddress() : Map.of());
+            return m;
+        }).toList();
 
-    resp.put("paymentCards", cards);
+        resp.put("paymentCards", cards);
 
-    return ResponseEntity.ok(resp);
+        return ResponseEntity.ok(resp);
     }
 
     @PutMapping
-    public ResponseEntity<?> update(Authentication auth, @RequestBody @Valid UpdateProfileRequest body){
+    public ResponseEntity<?> update(Authentication auth, @RequestBody @Valid UpdateProfileRequest body) {
         var u = me(auth).orElse(null);
-        if (u==null) return ResponseEntity.status(401).build();
+        if (u == null)
+            return ResponseEntity.status(401).build();
         boolean changed = false;
-        if (body.firstLastName != null && !body.firstLastName.isBlank()){ u.setName(body.firstLastName); changed=true; }
-        if (body.promotionsOptIn != null){ u.setPromotionsOptIn(body.promotionsOptIn); changed=true; }
-        if (body.address != null){ u.setAddress(body.address); changed=true; }
-        if (changed){ users.save(u); mail.send(u.getEmail(), "Your profile was changed", "We noticed profile info was updated."); }
-        return ResponseEntity.ok(Map.of("message","Updated"));
+        if (body.firstLastName != null && !body.firstLastName.isBlank()) {
+            u.setName(body.firstLastName);
+            changed = true;
+        }
+        if (body.promotionsOptIn != null) {
+            u.setPromotionsOptIn(body.promotionsOptIn);
+            changed = true;
+        }
+        if (body.address != null) {
+            u.setAddress(body.address);
+            changed = true;
+        }
+        if (changed) {
+            users.save(u);
+            mail.send(u.getEmail(), "Your profile was changed", "We noticed profile info was updated.");
+        }
+        return ResponseEntity.ok(Map.of("message", "Updated"));
     }
 
     @PostMapping("/password")
-    public ResponseEntity<?> changePassword(Authentication auth, @RequestBody @Valid ChangePasswordRequest body){
+    public ResponseEntity<?> changePassword(Authentication auth, @RequestBody @Valid ChangePasswordRequest body) {
         var u = me(auth).orElse(null);
-        if (u==null) return ResponseEntity.status(401).build();
-        if (!encoder.matches(body.currentPassword, u.getPasswordHash())){
-            return ResponseEntity.status(400).body(Map.of("message","Current password incorrect"));
+        if (u == null)
+            return ResponseEntity.status(401).build();
+        if (!encoder.matches(body.currentPassword, u.getPasswordHash())) {
+            return ResponseEntity.status(400).body(Map.of("message", "Current password incorrect"));
         }
         u.setPasswordHash(encoder.encode(body.newPassword));
         users.save(u);
         mail.send(u.getEmail(), "Your password was changed", "If this wasn't you, reset it now.");
-        return ResponseEntity.ok(Map.of("message","Password changed"));
+        return ResponseEntity.ok(Map.of("message", "Password changed"));
     }
 
     @PostMapping("/cards")
-    public ResponseEntity<?> addCard(Authentication auth, @RequestBody @Valid AddCardRequest body){
+    public ResponseEntity<?> addCard(Authentication auth, @RequestBody @Valid AddCardRequest body) {
         var u = me(auth).orElse(null);
-        if (u==null) return ResponseEntity.status(401).build();
-        if (u.getPaymentCards().size() >= 4){
-            return ResponseEntity.badRequest().body(Map.of("message","Maximum 4 cards allowed"));
+        if (u == null)
+            return ResponseEntity.status(401).build();
+        if (u.getPaymentCards().size() >= 4) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Maximum 4 cards allowed"));
         }
         var card = new User.PaymentCard();
         card.setId(ProfileDtos.newCardId());
-        String pan = body.number.replaceAll("\\s","");
-        if (pan.length() < 12 || pan.length() > 19) return ResponseEntity.badRequest().body(Map.of("message","Invalid card number"));
-        card.setLast4(pan.substring(pan.length()-4));
+        String pan = body.number.replaceAll("\\s", "");
+        if (pan.length() < 12 || pan.length() > 19)
+            return ResponseEntity.badRequest().body(Map.of("message", "Invalid card number"));
+        card.setLast4(pan.substring(pan.length() - 4));
         card.setBrand(brandOf(pan));
         card.setExpMonth(body.expMonth);
         card.setExpYear(body.expYear);
@@ -110,72 +132,86 @@ public class ProfileController {
     }
 
     @DeleteMapping("/cards/{cardId}")
-    public ResponseEntity<?> removeCard(Authentication auth, @PathVariable String cardId){
+    public ResponseEntity<?> removeCard(Authentication auth, @PathVariable String cardId) {
         var u = me(auth).orElse(null);
-        if (u==null) return ResponseEntity.status(401).build();
+        if (u == null)
+            return ResponseEntity.status(401).build();
         boolean removed = u.getPaymentCards().removeIf(c -> c.getId().equals(cardId));
-        if (!removed) return ResponseEntity.badRequest().body(Map.of("message","Card not found"));
+        if (!removed)
+            return ResponseEntity.badRequest().body(Map.of("message", "Card not found"));
         users.save(u);
-        return ResponseEntity.ok(Map.of("message","Removed"));
+        return ResponseEntity.ok(Map.of("message", "Removed"));
     }
 
     @PutMapping("/cards/{cardId}")
-public ResponseEntity<?> updateCard(
-        Authentication auth,
-        @PathVariable String cardId,
-        @RequestBody Map<String, Object> body
-) {
-    var u = me(auth).orElse(null);
-    if (u == null)
-        return ResponseEntity.status(401).build();
+    public ResponseEntity<?> updateCard(
+            Authentication auth,
+            @PathVariable String cardId,
+            @RequestBody Map<String, Object> body) {
+        var u = me(auth).orElse(null);
+        if (u == null)
+            return ResponseEntity.status(401).build();
 
-    var cards = u.getPaymentCards();
-    var card = cards.stream()
-            .filter(c -> c.getId().equals(cardId))
-            .findFirst()
-            .orElse(null);
+        var cards = u.getPaymentCards();
+        var card = cards.stream()
+                .filter(c -> c.getId().equals(cardId))
+                .findFirst()
+                .orElse(null);
 
-    if (card == null)
-        return ResponseEntity.badRequest().body(Map.of("message", "Card not found"));
+        if (card == null)
+            return ResponseEntity.badRequest().body(Map.of("message", "Card not found"));
 
-    // Extract and apply updates from request body
-    if (body.containsKey("number")) {
-        String pan = ((String) body.get("number")).replaceAll("\\s", "");
-        if (pan.length() < 12 || pan.length() > 19) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Invalid card number"));
+        // Extract and apply updates from request body
+        if (body.containsKey("number")) {
+            String pan = ((String) body.get("number")).replaceAll("\\s", "");
+            if (pan.length() < 12 || pan.length() > 19) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Invalid card number"));
+            }
+            card.setLast4(pan.substring(pan.length() - 4));
+            card.setBrand(brandOf(pan));
+            card.setNumberEnc(crypto.encrypt(pan));
         }
-        card.setLast4(pan.substring(pan.length() - 4));
-        card.setBrand(brandOf(pan));
-        card.setNumberEnc(crypto.encrypt(pan));
-    }
-    if (body.containsKey("expMonth")) card.setExpMonth((Integer) body.get("expMonth"));
-    if (body.containsKey("expYear")) card.setExpYear((Integer) body.get("expYear"));
-    if (body.containsKey("billingName")) card.setBillingName((String) body.get("billingName"));
+        if (body.containsKey("expMonth"))
+            card.setExpMonth((Integer) body.get("expMonth"));
+        if (body.containsKey("expYear"))
+            card.setExpYear((Integer) body.get("expYear"));
+        if (body.containsKey("billingName"))
+            card.setBillingName((String) body.get("billingName"));
 
-    if (body.containsKey("billingAddress")) {
-        Map<String, String> addr = (Map<String, String>) body.get("billingAddress");
-        // Use the existing billing address or create a new Address object if null
-        User.Address address = card.getBillingAddress();
-        if (address == null) {
-            address = new User.Address();
+        if (body.containsKey("billingAddress")) {
+            Object addrObj = body.get("billingAddress");
+            if (addrObj instanceof Map<?, ?> raw) {
+                @SuppressWarnings("unchecked")
+                Map<String, String> addr = (Map<String, String>) raw;
+                User.Address address = card.getBillingAddress();
+                if (address == null) {
+                    address = new User.Address();
+                }
+                if (addr.get("line1") != null)
+                    address.setLine1(addr.get("line1"));
+                if (addr.get("line2") != null)
+                    address.setLine2(addr.get("line2"));
+                if (addr.get("city") != null)
+                    address.setCity(addr.get("city"));
+                if (addr.get("state") != null)
+                    address.setState(addr.get("state"));
+                if (addr.get("zip") != null)
+                    address.setZip(addr.get("zip"));
+                card.setBillingAddress(address);
+            }
         }
-        // Update address fields using the Address class methods
-        if (addr.get("line1") != null) address.setLine1(addr.get("line1"));
-        if (addr.get("line2") != null) address.setLine2(addr.get("line2"));
-        if (addr.get("city") != null) address.setCity(addr.get("city"));
-        if (addr.get("state") != null) address.setState(addr.get("state"));
-        if (addr.get("zip") != null) address.setZip(addr.get("zip"));
-        card.setBillingAddress(address);
+
+        users.save(u);
+        return ResponseEntity.ok(Map.of("message", "Card updated successfully"));
     }
 
-    users.save(u);
-    return ResponseEntity.ok(Map.of("message", "Card updated successfully"));
-}
-
-    private String brandOf(String pan){
-        if (pan.startsWith("4")) return "Visa";
-        if (pan.matches("^5[1-5].*")) return "Mastercard";
-        if (pan.matches("^3[47].*")) return "Amex";
+    private String brandOf(String pan) {
+        if (pan.startsWith("4"))
+            return "Visa";
+        if (pan.matches("^5[1-5].*"))
+            return "Mastercard";
+        if (pan.matches("^3[47].*"))
+            return "Amex";
         return "Card";
     }
 }

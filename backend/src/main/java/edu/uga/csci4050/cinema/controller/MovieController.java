@@ -7,13 +7,11 @@ import edu.uga.csci4050.cinema.controller.dto.MovieDtos;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 
-// HTTP + dates
+// HTTP
 import org.springframework.http.HttpStatus;
-import java.time.LocalDate;
 
-// rating enum (adjust the package if yours differs)
+// rating enum
 import edu.uga.csci4050.cinema.type.RatingCode;
-
 
 import edu.uga.csci4050.cinema.model.MovieItem;
 import edu.uga.csci4050.cinema.util.HttpUtils;
@@ -52,25 +50,20 @@ public class MovieController {
                 "Could not find movies that match the applied filters.");
     }
 
-    @GetMapping("/currently-running")
-    public ResponseEntity<List<MovieItem>> getCurrentlyRunningMovies() {
-        List<MovieItem> movies = movieRepository.findByIsUpcoming(false);
-        return HttpUtils.buildResponseEntity(movies, "No currently running movies found.");
-    }
+    /**
+     * Note: Currently running and upcoming movie queries have been removed.
+     * These should now be determined by querying the Showtime/Showroom subsystems.
+     * Frontend should query showtimes to determine which movies are currently
+     * showing or upcoming.
+     */
 
-    @GetMapping("/upcoming")
-    public ResponseEntity<List<MovieItem>> getUpcomingMovies() {
-        List<MovieItem> movies = movieRepository.findByIsUpcoming(true);
-        return HttpUtils.buildResponseEntity(movies, "No upcoming movies found.");
-    }
-
-    // ---------- NEW: Create Movie ----------
+    // ---------- Create Movie ----------
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<MovieItem> createMovie(@Valid @RequestBody MovieDtos.CreateRequest dto) {
         MovieItem m = new MovieItem();
 
-        // 1) Straight mappings
+        // Map fields
         m.setTitle(dto.title);
         m.setGenres(dto.genres);
         m.setCast(dto.cast);
@@ -80,10 +73,8 @@ public class MovieController {
         m.setReviews(dto.reviews);
         m.setPoster(dto.poster);
         m.setTrailer(dto.trailer);
-        m.setShowtimes(dto.showtimes);
-        m.setReleased(dto.released);
 
-        // 2) Rating mapping "PG-13" -> RatingCode.PG13 (fallback to NR if unknown)
+        // Rating mapping "PG-13" -> RatingCode.PG13 (fallback to NR if unknown)
         if (dto.rating != null) {
             String r = dto.rating.trim().toUpperCase().replace("-", "").replace(" ", "");
             try {
@@ -101,21 +92,14 @@ public class MovieController {
             }
         }
 
-        // 3) Upcoming flag
-        Boolean upcoming = dto.upcoming;
-        if (upcoming == null) {
-            LocalDate rel = dto.released;
-            upcoming = (rel != null && rel.isAfter(LocalDate.now()));
-        }
-        m.setUpcoming(upcoming != null && upcoming);
-
         MovieItem saved = movieRepository.save(m);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<MovieItem> updateMovie(@PathVariable String id, @Valid @RequestBody MovieDtos.CreateRequest dto) {
+    public ResponseEntity<MovieItem> updateMovie(@PathVariable String id,
+            @Valid @RequestBody MovieDtos.CreateRequest dto) {
         return movieRepository.findById(id)
                 .map(m -> {
                     m.setTitle(dto.title);
@@ -127,24 +111,19 @@ public class MovieController {
                     m.setReviews(dto.reviews);
                     m.setPoster(dto.poster);
                     m.setTrailer(dto.trailer);
-                    m.setShowtimes(dto.showtimes);
-                    m.setReleased(dto.released);
                     if (dto.rating != null) {
                         String r = dto.rating.trim().toUpperCase().replace("-", "").replace(" ", "");
                         try {
-                            if ("PG13".equals(r)) m.setRating(RatingCode.PG13);
-                            else if ("NC17".equals(r)) m.setRating(RatingCode.NC17);
-                            else m.setRating(RatingCode.valueOf(r));
+                            if ("PG13".equals(r))
+                                m.setRating(RatingCode.PG13);
+                            else if ("NC17".equals(r))
+                                m.setRating(RatingCode.NC17);
+                            else
+                                m.setRating(RatingCode.valueOf(r));
                         } catch (Exception ignored) {
                             m.setRating(RatingCode.NR);
                         }
                     }
-                    Boolean upcoming = dto.upcoming;
-                    if (upcoming == null) {
-                        LocalDate rel = dto.released;
-                        upcoming = (rel != null && rel.isAfter(LocalDate.now()));
-                    }
-                    m.setUpcoming(upcoming != null && upcoming);
                     return ResponseEntity.ok(movieRepository.save(m));
                 })
                 .orElse(ResponseEntity.notFound().build());

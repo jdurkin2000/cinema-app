@@ -21,14 +21,9 @@ import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Random;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 @SpringBootTest
@@ -75,10 +70,11 @@ public class MovieAPITests {
 
         System.out.println("Movies have been uploaded to mongodb");
 
-//        System.out.println("Now Playing length: " + nowPlayingDb.size() + "\nUpcoming Length: " + upcomingDb.size());
-//        System.out.println("Obtained movies:\n");
-//        nowPlayingMovies.forEach(System.out::println);
-//        upcomingMovies.forEach(System.out::println);
+        // System.out.println("Now Playing length: " + nowPlayingDb.size() + "\nUpcoming
+        // Length: " + upcomingDb.size());
+        // System.out.println("Obtained movies:\n");
+        // nowPlayingMovies.forEach(System.out::println);
+        // upcomingMovies.forEach(System.out::println);
     }
 
     List<MovieDb> getDbList(List<Movie> movies, TmdbMovies db) {
@@ -105,9 +101,7 @@ public class MovieAPITests {
                 item.getProducer() == null || item.getProducer().isBlank() || item.getSynopsis() == null ||
                 item.getSynopsis().isBlank() || item.getReviews() == null || item.getReviews().isEmpty() ||
                 item.getPoster() == null || item.getPoster().isBlank() || item.getTrailer() == null ||
-                item.getTrailer().isBlank() || item.getRating() == null || item.getShowtimes() == null ||
-                item.getShowtimes().isEmpty() || item.getReleased() == null ||
-                item.getReleased() == LocalDate.EPOCH || item.getRating() == RatingCode.NR;
+                item.getTrailer().isBlank() || item.getRating() == null || item.getRating() == RatingCode.NR;
     }
 
     MovieItem convertToItem(MovieDb movie, boolean isUpcoming) {
@@ -143,11 +137,9 @@ public class MovieAPITests {
             case "NC-17" -> RatingCode.NC17;
             default -> RatingCode.NR;
         };
-        List<LocalDateTime> showtimes = generateRandomShowtimes();
-        LocalDate released = LocalDate.parse(movie.getReleaseDate());
 
         return new MovieItem(title, genres, cast, director, producer, synopsis,
-                reviews, poster, trailer, rating, showtimes, released, isUpcoming);
+                reviews, poster, trailer, rating);
     }
 
     String getCertification(MovieDb movie) {
@@ -156,22 +148,5 @@ public class MovieAPITests {
                 .findFirst().orElseThrow()
                 .getReleaseDates().stream().findFirst()
                 .orElseThrow().getCertification();
-    }
-
-    List<LocalDateTime> generateRandomShowtimes() {
-        Random rand = new Random();
-
-        LocalDateTime now = LocalDateTime.now();
-        int listLen = rand.nextInt(4, 20);
-        int[] months = rand.ints(listLen, now.getMonthValue(), 13).toArray();
-        int[] days = rand.ints(listLen, 1, 29).toArray();
-        int[] hours = rand.ints(listLen, 8, 24).toArray();
-        int[] minutes = rand.ints(listLen, 0, 4).toArray();
-
-        return IntStream.range(0, listLen)
-                .mapToObj(i -> LocalDateTime.of(now.getYear(), months[i], days[i], hours[i], minutes[i] * 15))
-                .filter(time -> time.isAfter(now))
-                .sorted()
-                .toList();
     }
 }

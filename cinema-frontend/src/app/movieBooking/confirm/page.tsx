@@ -2,14 +2,14 @@
 
 import React, { useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { dateReviver, formatDateTime, useMovies } from "@/libs/cinemaApi";
+import { dateReviver, useMovies } from "@/libs/cinemaApi";
+import { formatDateTime } from "@/utils/dateTimeUtil";
 import { Showtime } from "@/models/shows";
 
 export default function ConfirmPage() {
   const params = useSearchParams();
   const router = useRouter();
 
-  const movieId = params.get("id");
   const raw = params.get("showtime");
   const showtime: Showtime = raw
     ? JSON.parse(decodeURIComponent(raw), dateReviver)
@@ -21,7 +21,7 @@ export default function ConfirmPage() {
 
   const seats = seatsParam ? seatsParam.split(",").filter(Boolean) : [];
 
-  const { movies } = useMovies({ id: movieId || "0" });
+  const { movies } = useMovies({ id: showtime?.movieId || "0" });
   const movie = movies?.[0];
 
   const PRICES = { adult: 12.0, child: 8.0, senior: 10.0 };
@@ -39,7 +39,7 @@ export default function ConfirmPage() {
   const [promoError, setPromoError] = useState<string | null>(null);
 
   const handleConfirm = async () => {
-    if (!movieId || !showtime || seats.length === 0) return;
+    if (!showtime?.movieId || !showtime || seats.length === 0) return;
     setLoading(true);
     setError(null);
 
@@ -68,9 +68,9 @@ export default function ConfirmPage() {
       const saved = await res.json();
 
       const booking = {
-        movieId,
+        movieId: showtime?.movieId,
         movieTitle: movie?.title || "Unknown",
-        showtime: showtime?.start.toLocaleString(),
+        showtime: formatDateTime(showtime.start),
         seats,
         tickets: { adult, child, senior },
         subtotal,
@@ -91,9 +91,14 @@ export default function ConfirmPage() {
       }
 
       router.push("/profile");
-    } catch (err: any) {
-      console.error("Booking failed:", err);
-      setError(err?.message || "Failed to book seats");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error("Booking failed:", err);
+        setError(err.message || "Failed to book seats");
+      } else {
+        console.error("Booking failed (non-error):", err);
+        setError("Failed to book seats");
+      }
     } finally {
       setLoading(false);
     }
@@ -164,8 +169,12 @@ export default function ConfirmPage() {
                     code: promo.code,
                     discountPercent: promo.discountPercent,
                   });
-                } catch (err: any) {
-                  console.error(err);
+                } catch (err: unknown) {
+                  if (err instanceof Error) {
+                    console.error(err);
+                  } else {
+                    console.error("Unknown promo validation error", err);
+                  }
                   setPromoError("Failed to validate promo code");
                   setAppliedPromo(null);
                 } finally {

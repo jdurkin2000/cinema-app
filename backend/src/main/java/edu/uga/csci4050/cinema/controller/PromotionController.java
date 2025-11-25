@@ -6,6 +6,7 @@ import edu.uga.csci4050.cinema.model.User;
 import edu.uga.csci4050.cinema.repository.PromotionRepository;
 import edu.uga.csci4050.cinema.repository.UserRepository;
 import edu.uga.csci4050.cinema.service.MailService;
+import edu.uga.csci4050.cinema.util.DateTimeUtil;
 import edu.uga.csci4050.cinema.util.HttpUtils;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -13,7 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.mail.MailException;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
@@ -27,8 +28,8 @@ public class PromotionController {
     private final MailService mail;
 
     public PromotionController(PromotionRepository promotions,
-                               UserRepository users,
-                               MailService mail) {
+            UserRepository users,
+            MailService mail) {
         this.promotions = promotions;
         this.users = users;
         this.mail = mail;
@@ -56,10 +57,11 @@ public class PromotionController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Promo not found"));
         }
 
-        var today = LocalDate.now();
+        Instant now = DateTimeUtil.now();
         if (p.getStartDate() != null && p.getEndDate() != null
-                && (today.isBefore(p.getStartDate()) || today.isAfter(p.getEndDate()))) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Promo is not currently valid"));
+                && (now.isBefore(p.getStartDate()) || now.isAfter(p.getEndDate()))) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "Promo is not currently valid"));
         }
 
         return ResponseEntity.ok(p);
@@ -86,17 +88,28 @@ public class PromotionController {
         if (body.startDate == null || body.endDate == null) {
             return ResponseEntity.badRequest().body(Map.of("message", "Start and end date are required"));
         }
-        if (body.endDate.isBefore(body.startDate)) {
+
+        // Parse dates
+        Instant startDate;
+        Instant endDate;
+        try {
+            startDate = DateTimeUtil.parseDate(body.startDate);
+            endDate = DateTimeUtil.parseDate(body.endDate);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Invalid date format. Expected: yyyy-MM-dd"));
+        }
+
+        if (endDate.isBefore(startDate)) {
             return ResponseEntity.badRequest().body(Map.of("message", "End date must be on or after start date"));
         }
-        if (body.endDate.isBefore(LocalDate.now())) {
+        if (DateTimeUtil.isDateBeforeToday(endDate)) {
             return ResponseEntity.badRequest().body(Map.of("message", "End date cannot be in the past"));
         }
 
         Promotion p = new Promotion();
         p.setCode(code);
-        p.setStartDate(body.startDate);
-        p.setEndDate(body.endDate);
+        p.setStartDate(startDate);
+        p.setEndDate(endDate);
         p.setDiscountPercent(body.discountPercent);
 
         Promotion saved = promotions.save(p);
@@ -120,7 +133,8 @@ public class PromotionController {
 
         for (User u : subscribed) {
             String email = u.getEmail();
-            if (email == null || email.isBlank()) continue;
+            if (email == null || email.isBlank())
+                continue;
 
             String subject = "Cinema promotion: " + promo.getCode();
             String body = buildEmailBody(u, promo);
@@ -134,8 +148,7 @@ public class PromotionController {
 
         return ResponseEntity.ok(Map.of(
                 "promotionId", promotionId,
-                "emailsSent", sent
-        ));
+                "emailsSent", sent));
     }
 
     private String buildEmailBody(User u, Promotion p) {
@@ -146,7 +159,8 @@ public class PromotionController {
                 "Here's a new promotion just for our subscribers!\n\n" +
                 "Promo code: " + p.getCode() + "\n" +
                 "Discount: " + p.getDiscountPercent() + "%\n" +
-                "Valid from " + p.getStartDate() + " to " + p.getEndDate() + ".\n\n" +
+                "Valid from " + DateTimeUtil.formatDate(p.getStartDate()) +
+                " to " + DateTimeUtil.formatDate(p.getEndDate()) + ".\n\n" +
                 "See you at the cinema!\n";
     }
 }

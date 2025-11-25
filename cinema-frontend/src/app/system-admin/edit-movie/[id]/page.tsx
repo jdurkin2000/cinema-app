@@ -7,11 +7,11 @@ import {
   updateMovie,
   getShowrooms,
   CreateMoviePayload,
-  Showroom, // <-- Importing Showroom type from cinemaApi.ts
+  Showroom,
   deleteShowtimeFromShowroom,
 } from "@/libs/cinemaApi";
+import { Showtime } from "@/models/shows";
 import Movie from "@/models/movie"; // <-- IMPORTANT: Importing Movie model type
-
 
 // --- REMOVED: Local MovieItem interface to avoid type conflict ---
 // --- REMOVED: Local Showroom interface ---
@@ -56,7 +56,6 @@ export default function EditMoviePage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-
   // --- Data Fetching ---
   useEffect(() => {
     async function fetchData() {
@@ -84,15 +83,15 @@ export default function EditMoviePage() {
         // Map existing showtimes from the showrooms collection for this movie
         const showtimeEntries: ShowtimeEntry[] = [];
         showroomsResponse.forEach((room) => {
-          (room.showtimes || []).forEach((st: any, idx: number) => {
+          (room.showtimes || []).forEach((st: Showtime, idx: number) => {
             if (!st) return;
             // st.movieId may be an ObjectId string; compare as strings
             if (String(st.movieId) === String(movieId)) {
-              const startIso = st.start instanceof Date ? st.start.toISOString() : String(st.start);
+              const startIso = String(st.start);
               showtimeEntries.push({
                 id: Date.now() + showtimeEntries.length,
                 time: startIso.substring(0, 16),
-                showroomName: room.name || room.id || "Unnamed Showroom",
+                showroomName: room.id,
                 rawStart: startIso,
                 showroomId: room.id,
               });
@@ -100,14 +99,20 @@ export default function EditMoviePage() {
           });
         });
         // Sort by time ascending
-        showtimeEntries.sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0));
+        showtimeEntries.sort((a, b) =>
+          a.time < b.time ? -1 : a.time > b.time ? 1 : 0
+        );
         setCurrentShowtimes(showtimeEntries);
 
         // ...existing initialization complete
 
         setLoaded(true);
-      } catch (err: any) {
-        setError(err?.message || "Failed to load movie or showrooms.");
+      } catch (err: unknown) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Failed to load movie or showrooms."
+        );
         setLoaded(true);
       }
     }
@@ -144,8 +149,10 @@ export default function EditMoviePage() {
         });
         // on success, remove locally
         setCurrentShowtimes((prev) => prev.filter((st) => st.id !== id));
-      } catch (err: any) {
-        setError(err?.message || "Failed to remove showtime.");
+      } catch (err: unknown) {
+        setError(
+          err instanceof Error ? err.message : "Failed to remove showtime."
+        );
       } finally {
         setBusy(false);
       }
@@ -159,27 +166,7 @@ export default function EditMoviePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-
     if (!movieData.title?.trim()) return setError("Title is required.");
-    // Add other required field validations here...
-
-    // The backend expects ONLY the array of ISO time strings for showtimes.
-    // Flatten the structured currentShowtimes back into a string array.
-    const allTimes = currentShowtimes.map((st) => st.time);
-
-    // Prepare the released date for the payload (which expects Date | string)
-    // movieData.released is already a Date object (if loaded) or string.
-    let releasedDate;
-    if (movieData.released) {
-      // If it was loaded as a Date (from the API), use that Date object.
-      if (movieData.released instanceof Date) {
-        releasedDate = movieData.released;
-      } else if (typeof movieData.released === 'string') {
-        // If the input field changed it to a date string, convert it to Date
-        releasedDate = new Date(movieData.released);
-      }
-    }
-
 
     const payload: CreateMoviePayload = {
       title: movieData.title?.trim() || "",
@@ -192,19 +179,14 @@ export default function EditMoviePage() {
       genres: listify(genresText),
       cast: listify(castText),
       reviews: listify(reviewsText),
-      // Sending flattened list of time strings
-      showtimes: allTimes,
-      released: releasedDate,
-      upcoming: movieData.upcoming ?? true,
     };
 
     try {
       setBusy(true);
-      // Call the API function mapped to PUT /api/movies/{id}
       await updateMovie(movieId, payload);
       router.push("/system-admin");
-    } catch (err: any) {
-      setError(err?.message || "Failed to update movie.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to update movie.");
     } finally {
       setBusy(false);
     }
@@ -237,7 +219,9 @@ export default function EditMoviePage() {
   return (
     <main className="max-w-4xl mx-auto p-8 bg-white shadow-lg rounded-lg text-gray-900">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-800">Edit Movie: {movieData.title}</h1>
+        <h1 className="text-3xl font-bold text-gray-800">
+          Edit Movie: {movieData.title}
+        </h1>
         <button
           onClick={() => router.back()}
           className="rounded border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50 transition"
@@ -253,11 +237,12 @@ export default function EditMoviePage() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
-
         {/* --- Primary Details --- */}
         <div className="grid gap-6 md:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Title *</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Title *
+            </label>
             <input
               className="mt-1 w-full rounded-md border border-gray-300 px-4 py-2 focus:ring-blue-500 focus:border-blue-500"
               value={movieData.title || ""}
@@ -267,7 +252,9 @@ export default function EditMoviePage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Rating *</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Rating *
+            </label>
             <select
               className="mt-1 w-full rounded-md border border-gray-300 px-4 py-2 focus:ring-blue-500 focus:border-blue-500"
               value={movieData.rating || "NR"}
@@ -286,7 +273,9 @@ export default function EditMoviePage() {
         {/* Poster + Trailer */}
         <div className="grid gap-6 md:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Poster URL *</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Poster URL *
+            </label>
             <input
               className="mt-1 w-full rounded-md border border-gray-300 px-4 py-2"
               value={movieData.poster || ""}
@@ -299,13 +288,15 @@ export default function EditMoviePage() {
                   src={movieData.poster}
                   alt="Poster preview"
                   className="h-40 w-auto rounded-md border object-cover"
-                  onError={(e) => ((e.currentTarget.style.display = "none"))}
+                  onError={(e) => (e.currentTarget.style.display = "none")}
                 />
               </div>
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Trailer URL *</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Trailer URL *
+            </label>
             <input
               className="mt-1 w-full rounded-md border border-gray-300 px-4 py-2"
               value={movieData.trailer || ""}
@@ -315,31 +306,13 @@ export default function EditMoviePage() {
           </div>
         </div>
 
-        {/* Release + Upcoming */}
-        <div className="grid gap-6 md:grid-cols-2">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Release Date</label>
-            <input
-              type="date"
-              className="mt-1 w-full rounded-md border border-gray-300 px-4 py-2"
-              // CORRECTED VALUE ASSIGNMENT:
-              value={
-                movieData.released
-                  ? movieData.released instanceof Date
-                    ? movieData.released.toISOString().substring(0, 10) // Format Date object
-                    : (movieData.released as string).substring(0, 10)   // Format string (e.g., from initial load)
-                  : "" // Fallback to empty string if undefined/null
-              }
-              onChange={(e) => handleInputChange("released", e.target.value)}
-            />
-          </div>
-
-          {/* 'Is Upcoming' flag removed from Edit Movie page. Managed via Schedule/Backend. */}
-        </div>
+        {/* Release date & upcoming removed per refactor */}
 
         {/* Synopsis */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">Synopsis</label>
+          <label className="block text-sm font-medium text-gray-700">
+            Synopsis
+          </label>
           <textarea
             className="mt-1 w-full rounded-md border border-gray-300 px-4 py-2"
             rows={4}
@@ -352,7 +325,9 @@ export default function EditMoviePage() {
         {/* Director / Producer */}
         <div className="grid gap-6 md:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Director</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Director
+            </label>
             <input
               className="mt-1 w-full rounded-md border border-gray-300 px-4 py-2"
               value={movieData.director || ""}
@@ -361,7 +336,9 @@ export default function EditMoviePage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Producer</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Producer
+            </label>
             <input
               className="mt-1 w-full rounded-md border border-gray-300 px-4 py-2"
               value={movieData.producer || ""}
@@ -372,7 +349,9 @@ export default function EditMoviePage() {
         </div>
 
         {/* --- List Inputs --- */}
-        <h2 className="text-xl font-semibold pt-4 border-t mt-6">Lists (Genres, Cast, Reviews)</h2>
+        <h2 className="text-xl font-semibold pt-4 border-t mt-6">
+          Lists (Genres, Cast, Reviews)
+        </h2>
         <div className="grid gap-6 md:grid-cols-3">
           <div>
             <label className="block text-sm font-medium text-gray-700">
@@ -413,9 +392,10 @@ export default function EditMoviePage() {
         </div>
 
         {/* --- Showtime / Showroom Management --- */}
-        <h2 className="text-xl font-semibold pt-4 border-t mt-6">Showtimes & Showrooms 📅</h2>
+        <h2 className="text-xl font-semibold pt-4 border-t mt-6">
+          Showtimes & Showrooms 📅
+        </h2>
         <div className="space-y-4 border border-gray-200 p-5 rounded-lg bg-gray-50">
-
           {/* List of Current Showtimes */}
           <div className="text-sm space-y-2">
             <p className="font-semibold text-gray-700">Scheduled Showings:</p>
@@ -449,7 +429,6 @@ export default function EditMoviePage() {
 
           {/* Adding new showtimes removed: use the Schedule Movie page to create showtimes. */}
         </div>
-
 
         {/* --- Actions --- */}
         <div className="pt-4 flex items-center gap-3 border-t">

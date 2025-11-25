@@ -1,6 +1,11 @@
 package edu.uga.csci4050.cinema.type;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
-public record Showtime(String movieId, LocalDateTime start, String[] bookedSeats, String roomId) {
+/**
+ * Showtime record.
+ * Uses Instant for start time to ensure UTC consistency.
+ * Use DateTimeUtil for conversions to/from user-friendly formats.
+ */
+public record Showtime(String movieId, Instant start, String[] bookedSeats, String roomId) {
 }

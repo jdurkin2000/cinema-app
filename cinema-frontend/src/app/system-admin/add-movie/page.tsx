@@ -15,7 +15,6 @@ function hasDuplicateStrings(arr: string[]): boolean {
   return false;
 }
 
-
 /**
  * Admin / Add Movie
  * - Validates required fields (title, poster, trailer, rating)
@@ -41,11 +40,7 @@ export default function AddMoviePage() {
   const [genresText, setGenresText] = useState("");
   const [castText, setCastText] = useState("");
   const [reviewsText, setReviewsText] = useState("");
-  const [showtimesText, setShowtimesText] = useState(""); // e.g., 2025-12-01T19:30
-
-  // Date + flag
-  const [released, setReleased] = useState<string>(""); // yyyy-mm-dd
-  const [upcoming, setUpcoming] = useState<boolean>(true);
+  // Removed showtimes/released/upcoming per refactor
 
   // UX state
   const [busy, setBusy] = useState(false);
@@ -78,18 +73,11 @@ export default function AddMoviePage() {
       genres: listify(genresText),
       cast: listify(castText),
       reviews: listify(reviewsText),
-      // Send ISO strings (backend parses to LocalDate/LocalDateTime)
-      showtimes: listify(showtimesText), // keep as ISO strings like 2025-12-01T19:30
-      released: released ? new Date(released) : undefined,
-      upcoming,
     };
 
     try {
       setBusy(true);
-      if (payload.showtimes) {
-        if (hasDuplicateStrings(payload.showtimes as string[]))
-          throw new Error("Cannot book two movies in the same time and room!");
-      }
+      // duplicate showtime check removed; scheduling handled elsewhere
       await createMovie(payload);
       router.push("/system-admin");
     } catch (err: any) {
@@ -146,7 +134,7 @@ export default function AddMoviePage() {
                   src={poster}
                   alt="Poster preview"
                   className="h-40 w-auto rounded border object-cover"
-                  onError={(e) => ((e.currentTarget.style.display = "none"))}
+                  onError={(e) => (e.currentTarget.style.display = "none")}
                 />
               </div>
             )}
@@ -162,7 +150,7 @@ export default function AddMoviePage() {
           </div>
         </div>
 
-        {/* Rating + Release + Upcoming */}
+        {/* Rating (release/upcoming removed) */}
         <div className="grid gap-4 md:grid-cols-3">
           <div>
             <label className="block text-sm font-medium">Rating *</label>
@@ -180,31 +168,9 @@ export default function AddMoviePage() {
             </select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium">Release Date</label>
-            <input
-              type="date"
-              className="mt-1 w-full rounded border px-3 py-2"
-              value={released}
-              onChange={(e) => setReleased(e.target.value)}
-            />
-          </div>
-            
-            {/*}
-          <div className="flex items-center gap-2 pt-7">
-            <input
-              id="upcoming"
-              type="checkbox"
-              className="h-4 w-4"
-              checked={upcoming}
-              onChange={(e) => setUpcoming(e.target.checked)}
-            />
-            <label htmlFor="upcoming" className="text-sm font-medium">
-              Upcoming
-            </label>
-          </div>
-           */}  
+          {/* Release date removed */}
 
+          {/* Upcoming flag removed */}
         </div>
 
         {/* Director / Producer */}
@@ -280,23 +246,9 @@ export default function AddMoviePage() {
             />
           </div>
         </div>
-        
-         {/*  
-        { Showtimes }
-        <div>
-          <label className="block text-sm font-medium">
-            Showtimes (ISO, comma/line — e.g., 2025-12-01T19:30)
-          </label>
-          <textarea
-            className="mt-1 w-full rounded border px-3 py-2"
-            rows={2}
-            value={showtimesText}
-            onChange={(e) => setShowtimesText(e.target.value)}
-            placeholder={`2025-12-01T19:30\n2025-12-02T20:00`}
-          />
-        </div>
-            */}
-            
+
+        {/* Showtimes input removed; scheduling handled on schedule-movie page */}
+
         {/* Actions */}
         <div className="pt-2 flex items-center gap-3">
           <button

@@ -5,15 +5,14 @@ import edu.uga.csci4050.cinema.type.RatingCode;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /*
 For each movie, the system must record movie title, category, cast,
 director, producer, synopsis, reviews, trailer picture and video,
-MPAA-US film rating code [1], and show dates and times.
+MPAA-US film rating code [1].
+
+Note: Show dates/times are now handled by the Showtime and Showroom models.
  */
 
 @Document(collection = "movies")
@@ -28,21 +27,18 @@ public class MovieItem {
     private String producer;
     private String synopsis;
     private List<String> reviews;
-    private String poster; // I think this and trailer will be encoded as urls
-    private String trailer;
+    private String poster; // URL to poster image
+    private String trailer; // URL to trailer video
     private RatingCode rating;
-    private List<LocalDateTime> showtimes;
-    private LocalDate released;
-    private boolean isUpcoming;
 
     // Default constructor required for MongoDB
-    public MovieItem() {}
+    public MovieItem() {
+    }
 
     public MovieItem(String title, List<String> genres,
-                     List<String> cast, String director, String producer,
-                     String synopsis, List<String> reviews, String poster,
-                     String trailer, RatingCode rating, List<LocalDateTime> showtimes,
-                     LocalDate released, boolean isUpcoming) {
+            List<String> cast, String director, String producer,
+            String synopsis, List<String> reviews, String poster,
+            String trailer, RatingCode rating) {
         this.title = title;
         this.genres = genres;
         this.cast = cast;
@@ -53,9 +49,6 @@ public class MovieItem {
         this.poster = poster;
         this.trailer = trailer;
         this.rating = rating;
-        this.showtimes = showtimes;
-        this.released = released;
-        this.isUpcoming = isUpcoming;
     }
 
     public String getId() {
@@ -102,25 +95,14 @@ public class MovieItem {
         return rating;
     }
 
-    public List<LocalDateTime> getShowtimes() {
-        return showtimes;
-    }
-
-    public LocalDate getReleased() {
-        return released;
-    }
-
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        DateTimeFormatter dateTimeFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
         sb.append("=== Movie Details ===\n");
         sb.append("ID: ").append(id).append("\n");
         sb.append("Title: ").append(title).append("\n");
         sb.append("Rating: ").append(rating != null ? rating : "N/A").append("\n");
-        sb.append("Released: ").append(released != null ? released.format(dateFormat) : "N/A").append("\n");
 
         sb.append("Genres: ").append(formatList(genres)).append("\n");
         sb.append("Cast: ").append(formatList(cast)).append("\n");
@@ -134,17 +116,6 @@ public class MovieItem {
         sb.append("Poster URL: ").append(poster != null ? poster : "N/A").append("\n");
         sb.append("Trailer URL: ").append(trailer != null ? trailer : "N/A").append("\n");
 
-        if (showtimes != null && !showtimes.isEmpty()) {
-            sb.append("Showtimes:\n");
-            for (var time : showtimes) {
-                sb.append("  - ").append(time.format(dateTimeFormat)).append("\n");
-            }
-        } else {
-            sb.append("Showtimes: N/A\n");
-        }
-
-        sb.append("Is Upcoming: ").append(isUpcoming).append("\n");
-
         sb.append("=====================");
 
         return sb.toString();
@@ -152,10 +123,6 @@ public class MovieItem {
 
     private static String formatList(List<String> list) {
         return (list != null && !list.isEmpty()) ? String.join(", ", list) : "N/A";
-    }
-
-    public boolean isUpcoming() {
-        return isUpcoming;
     }
 
     // Setters for MongoDB deserialization
@@ -201,17 +168,5 @@ public class MovieItem {
 
     public void setRating(RatingCode rating) {
         this.rating = rating;
-    }
-
-    public void setShowtimes(List<LocalDateTime> showtimes) {
-        this.showtimes = showtimes;
-    }
-
-    public void setReleased(LocalDate released) {
-        this.released = released;
-    }
-
-    public void setUpcoming(boolean upcoming) {
-        isUpcoming = upcoming;
     }
 }

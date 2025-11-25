@@ -7,6 +7,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import "./movieDetails.css";
 import { getShowtimesForMovie } from "@/libs/showingsApi";
+import { formatDateTime } from "@/utils/dateTimeUtil";
 import { Showtime } from "@/models/shows";
 
 export default function Home() {
@@ -15,7 +16,9 @@ export default function Home() {
 
   const { movies, status } = useMovies({ id: movieId || "0" });
   const [showtimes, setShowtimes] = useState<Showtime[] | null>(null);
-  const [selectedShowtime, setSelectedShowtime] = useState<Showtime | null>(null);
+  const [selectedShowtime, setSelectedShowtime] = useState<Showtime | null>(
+    null
+  );
   const [isShowtimeOpen, setIsShowtimeOpen] = useState(false);
 
   const onPickShowtime = (show: Showtime) => {
@@ -162,9 +165,11 @@ export default function Home() {
                     type="button"
                     onClick={() => onPickShowtime(showtime)}
                     className="showtime-btn"
-                    aria-label={`Choose showtime ${showtime.start.toLocaleString()}`}
+                    aria-label={`Choose showtime ${formatDateTime(
+                      showtime.start
+                    )}`}
                   >
-                    {showtime.start.toLocaleString()}
+                    {formatDateTime(showtime.start)}
                   </button>
                 </li>
               ))}
@@ -183,7 +188,7 @@ export default function Home() {
               <h3 className="section-title">Confirm your showtime</h3>
               <p className="section-text" style={{ marginTop: "0.5rem" }}>
                 {selectedShowtime
-                  ? `You picked ${selectedShowtime.start.toLocaleString()}.`
+                  ? `You picked ${formatDateTime(selectedShowtime.start)}.`
                   : "Pick a time."}
               </p>
               <div className="modal-buttons">
@@ -198,7 +203,9 @@ export default function Home() {
                   href={{
                     pathname: "/movieBooking",
                     query: {
-                      showtime: encodeURIComponent(JSON.stringify(selectedShowtime))
+                      showtime: encodeURIComponent(
+                        JSON.stringify(selectedShowtime)
+                      ),
                     },
                   }}
                   className="modal-btn"
