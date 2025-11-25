@@ -198,9 +198,7 @@ export default function Home() {
                   href={{
                     pathname: "/movieBooking",
                     query: {
-                      id: movie?.id,
-                      showroomId: selectedShowtime?.roomId,
-                      start: selectedShowtime?.start.toLocaleString()
+                      showtime: encodeURIComponent(JSON.stringify(selectedShowtime))
                     },
                   }}
                   className="modal-btn"

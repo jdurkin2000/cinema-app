@@ -49,7 +49,7 @@ export function getErrorMessage(status?: number): string {
 const isoDateRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z)?$/;
 
 // Reviver function that converts ISO strings to Date
-function dateReviver(key: string, value: unknown) {
+export function dateReviver(key: string, value: unknown) {
   if (typeof value === "string" && isoDateRegex.test(value)) {
     return new Date(value);
   }

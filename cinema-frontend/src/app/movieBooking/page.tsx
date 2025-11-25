@@ -1,13 +1,14 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { formatDateTime, Showroom, useMovies } from "@/libs/cinemaApi";
+import { dateReviver, formatDateTime, Showroom, useMovies } from "@/libs/cinemaApi";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
+import { Showtime } from "@/models/shows";
 
 // === NEW: HARDCODED UNAVAILABLE SEATS ===
-const UNAVAILABLE_SEATS = ["C4", "C5", "D2"];
+// const UNAVAILABLE_SEATS = ["C4", "C5", "D2"];
 // ========================================
 
 // Define the props for a single seat
@@ -56,11 +57,11 @@ const rows = [
 
 export default function Home() {
   const params = useSearchParams();
-  const movieId = params.get("id");
-  const roomId = params.get("showroomId") || "No showroom ID found";
-  const start = params.get("start") || "";
+  const raw = params.get("showtime");
+  const showtime: Showtime = raw? JSON.parse(decodeURIComponent(raw), dateReviver) : null;
+  const UNAVAILABLE_SEATS = showtime?.bookedSeats || []
 
-  const { movies, status } = useMovies({ id: movieId || "0" });
+  const { movies, status } = useMovies({ id: showtime.movieId || "0" });
 
   const movie = movies[0];
 
@@ -83,11 +84,11 @@ export default function Home() {
 
   useEffect(() => {
     // Fetch all showrooms
-    fetch(`http://localhost:8080/api/showrooms/${roomId}/showtimes`)
+    fetch(`http://localhost:8080/api/showrooms/${showtime?.roomId}/showtimes`)
       .then((res) => res.json())
       .then((data: Showroom) => setShowroom(data))
       .catch(() => setShowroom({id: "error"}));
-  }, [roomId]);
+  }, [showtime?.roomId]);
 
   const handleSelectSeat = (seatNumber: string) => {
     // Prevent selection if seat is unavailable
@@ -152,7 +153,7 @@ export default function Home() {
         height={250}
         className="rounded-lg transform hover:scale-110 transition duration-300 active:scale-95"
       />
-      <p className="text-lg">Showtime: {formatDateTime(new Date(start))}</p>
+      <p className="text-lg">Showtime: {formatDateTime(showtime.start)}</p>
 
       <p className="text-lg">Showroom: {showroom?.id}</p>
 
@@ -264,8 +265,7 @@ export default function Home() {
         onClick={() => {
           if (selectedSeats.length !== totalTickets || totalTickets === 0) return;
           const params = new URLSearchParams();
-          if (movieId) params.set("id", movieId);
-          params.set("showtime", start);
+          if (raw) params.set("showtime", raw)
           params.set("seats", selectedSeats.join(","));
           params.set("adult", String(tickets.adult));
           params.set("child", String(tickets.child));
