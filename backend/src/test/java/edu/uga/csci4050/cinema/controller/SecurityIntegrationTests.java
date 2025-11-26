@@ -10,12 +10,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration;
 import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import static org.mockito.Mockito.mock;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -42,15 +44,28 @@ class SecurityIntegrationTests {
     @Autowired
     MockMvc mvc;
 
-    @MockBean
+    @Autowired
     ShowroomRepository showroomRepository;
 
-    @MockBean
+    @Autowired
     edu.uga.csci4050.cinema.security.JwtService jwtService;
 
     // No mongoTemplate needed when repositories are disabled
 
     ObjectMapper om = new ObjectMapper();
+
+    @TestConfiguration
+    static class TestBeansConfig {
+        @Bean
+        ShowroomRepository showroomRepository() {
+            return mock(ShowroomRepository.class);
+        }
+
+        @Bean
+        edu.uga.csci4050.cinema.security.JwtService jwtService() {
+            return mock(edu.uga.csci4050.cinema.security.JwtService.class);
+        }
+    }
 
     @Test
     @DisplayName("GET /api/showrooms is public")
