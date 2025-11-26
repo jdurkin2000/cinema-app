@@ -11,6 +11,7 @@ import {
   deleteShowtimeFromShowroom,
 } from "@/libs/cinemaApi";
 import { Showtime } from "@/models/shows";
+import { formatDateTime } from "@/utils/dateTimeUtil";
 import Movie from "@/models/movie"; // <-- IMPORTANT: Importing Movie model type
 
 // --- REMOVED: Local MovieItem interface to avoid type conflict ---
@@ -409,7 +410,7 @@ export default function EditMoviePage() {
                     className="flex justify-between items-center bg-white p-3 border rounded-md shadow-sm"
                   >
                     <span className="font-medium">
-                      {entry.time.replace("T", " at ")}
+                      {formatDateTime(entry.rawStart ?? entry.time)}
                     </span>
                     <span className="text-xs text-gray-600 italic">
                       ({entry.showroomName})
