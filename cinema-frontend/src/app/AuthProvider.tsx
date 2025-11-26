@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from "react";
 import { getToken, clearToken } from "@/libs/authStore";
 
 function decodeJwt(token: string) {
@@ -35,16 +41,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<string | null>(null);
 
   useEffect(() => {
-    const token = getToken();
-    if (token) {
-      const decoded = decodeJwt(token);
-      setUser(decoded?.name || decoded?.sub || null);
-    }
+    const syncFromToken = () => {
+      const token = getToken();
+      if (token) {
+        const decoded = decodeJwt(token);
+        setUser(decoded?.name || decoded?.sub || null);
+      } else {
+        setUser(null);
+      }
+    };
+
+    // initial
+    syncFromToken();
+    // react to token updates (login/logout)
+    window.addEventListener("token-changed", syncFromToken);
+    return () => window.removeEventListener("token-changed", syncFromToken);
   }, []);
 
   const logout = () => {
     clearToken();
     setUser(null);
+    // notify listeners like Navbar to refresh derived state (e.g., role)
+    window.dispatchEvent(new Event("token-changed"));
   };
 
   return (

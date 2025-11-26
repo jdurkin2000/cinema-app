@@ -92,8 +92,10 @@ public class SecurityConfig {
                         // Public showroom/showtime browsing (read-only)
                         .requestMatchers(HttpMethod.GET, "/api/showrooms/**").permitAll()
 
-                        // Showroom management requires authentication
-                        .requestMatchers("/api/showrooms/**").authenticated()
+                        // Showroom management requires admin role
+                        .requestMatchers(HttpMethod.POST, "/api/showrooms/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/showrooms/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/showrooms/**").hasRole("ADMIN")
 
                         // Public promotion validation
                         .requestMatchers(HttpMethod.GET, "/api/promotions/validate").permitAll()

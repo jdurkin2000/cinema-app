@@ -39,6 +39,10 @@ public class ShowroomController {
     public ResponseEntity<Showroom> addShowtimeToShowroom(@PathVariable String id, @RequestBody Showtime showtime) {
         return showroomRepository.findById(id)
                 .map(showroom -> {
+                    // Initialize showtimes list if null to avoid NPE on first insert
+                    if (showroom.getShowtimes() == null) {
+                        showroom.setShowtimes(new java.util.ArrayList<>());
+                    }
                     showroom.getShowtimes().add(showtime);
                     return ResponseEntity.ok(showroomRepository.save(showroom));
                 })
@@ -54,6 +58,9 @@ public class ShowroomController {
         }
 
         Showroom showroom = maybe.get();
+        if (showroom.getShowtimes() == null) {
+            return ResponseEntity.notFound().build();
+        }
         boolean removed = showroom.getShowtimes()
                 .removeIf(st -> String.valueOf(st.movieId()).equals(String.valueOf(showtime.movieId()))
                         && st.start().equals(showtime.start()));

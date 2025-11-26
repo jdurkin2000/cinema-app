@@ -54,6 +54,13 @@
 			<scope>test</scope>
 		</dependency>
 
+		<!-- Spring Security test utilities (@WithMockUser, MockMvc config) -->
+		<dependency>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+
         <dependency>
             <groupId>uk.co.conoregan</groupId>
             <artifactId>themoviedbapi</artifactId>

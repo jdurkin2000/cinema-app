@@ -7,6 +7,7 @@ import logo from "@/assets/logo.svg";
 import { getToken, clearToken } from "@/libs/authStore";
 import { useRouter } from "next/navigation";
 import "./Navbar.css";
+import { useAuth } from "@/app/AuthProvider";
 
 function decodeJwt(token: string) {
   try {
@@ -15,7 +16,7 @@ function decodeJwt(token: string) {
     const jsonPayload = decodeURIComponent(
       atob(base64)
         .split("")
-        .map(c => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
         .join("")
     );
     return JSON.parse(jsonPayload);
@@ -25,59 +26,72 @@ function decodeJwt(token: string) {
 }
 
 export default function Navbar() {
-  const [username, setUsername] = useState<string | null>(null);
+  const { user, logout } = useAuth();
   const [role, setRole] = useState<string | null>(null);
   const router = useRouter();
-  // Update username from token
-  const updateUser = () => {
+  // Update role from token
+  const updateRole = () => {
     const token = getToken();
     if (token) {
       const decoded = decodeJwt(token);
-      setUsername(decoded?.name || decoded?.sub || null);
       setRole(decoded?.role || null);
     } else {
-      setUsername(null);
       setRole(null);
     }
   };
 
   useEffect(() => {
-    updateUser(); // initial check
-    window.addEventListener("token-changed", updateUser); // listen for token updates
-    return () => window.removeEventListener("token-changed", updateUser);
+    updateRole(); // initial check
+    window.addEventListener("token-changed", updateRole); // listen for token updates
+    return () => window.removeEventListener("token-changed", updateRole);
   }, []);
 
   const handleLogout = () => {
     clearToken();
-    setUsername(null);
-    window.dispatchEvent(new Event("token-changed")); // notify others
+    logout();
+    window.dispatchEvent(new Event("token-changed")); // notify others (e.g., role refresh)
     router.push("/");
   };
 
   return (
     <nav className="topnav">
-      <Link href="/" className="nav-brand" style={{ display: "flex", alignItems: "center" }}>
+      <Link
+        href="/"
+        className="nav-brand"
+        style={{ display: "flex", alignItems: "center" }}
+      >
         <Image src={logo} alt="Site Logo" className="nav-logo" />
         <h1 className="title">PeakCinema</h1>
       </Link>
 
       <div className="nav-links">
-        {username ? (
+        {user ? (
           <>
             {role === "ADMIN" ? (
-              <Link href="/system-admin" className="nav-welcome admin-home-button">Admin Homepage</Link>
+              <Link
+                href="/system-admin"
+                className="nav-welcome admin-home-button"
+              >
+                Admin Homepage
+              </Link>
             ) : (
               <>
-                <span className="nav-welcome">Welcome, {username}</span>
+                <span className="nav-welcome">Welcome, {user}</span>
                 <Link href="/profile">Edit Profile</Link>
               </>
             )}
-            <button className="logout-button" onClick={handleLogout}>Logout</button>
+            <button className="logout-button" onClick={handleLogout}>
+              Logout
+            </button>
           </>
         ) : (
           <>
-            <Link href="/register" className="register-button">Register</Link>
-            <Link href="/login" className="signin-button">Sign in</Link>
+            <Link href="/register" className="register-button">
+              Register
+            </Link>
+            <Link href="/login" className="signin-button">
+              Sign in
+            </Link>
           </>
         )}
       </div>

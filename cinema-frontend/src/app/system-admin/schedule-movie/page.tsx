@@ -171,17 +171,25 @@ export default function ScheduleMoviePage() {
     }));
 
     try {
+      const token =
+        typeof window !== "undefined"
+          ? localStorage.getItem("authToken") ||
+            sessionStorage.getItem("authToken")
+          : null;
+      if (!token) {
+        setState((prev) => ({
+          ...prev,
+          error:
+            "Unauthorized: please log in to schedule showtimes (admin or user).",
+        }));
+        return;
+      }
       const newShowtime: Showtime = {
         movieId: state.selectedMovieId,
         start: new Date(state.selectedTime).toISOString(),
         bookedSeats: [],
         roomId: showroom.id,
       };
-
-      const token =
-        typeof window !== "undefined"
-          ? localStorage.getItem("authToken")
-          : null;
 
       const url = `${showroomsApiBase}/${state.selectedShowroomId}/showtimes`;
       await axios.post(url, newShowtime, {
@@ -213,10 +221,20 @@ export default function ScheduleMoviePage() {
         ...prev,
         showrooms: res.data,
       }));
-    } catch (err: any) {
-      const errorMessage =
-        err.response?.data?.message ||
-        "Failed to schedule showtime. Please try again.";
+    } catch (err: unknown) {
+      let errorMessage = "Failed to schedule showtime. Please try again.";
+      if (axios.isAxiosError(err)) {
+        const status = err.response?.status;
+        if (status === 401 || status === 403) {
+          errorMessage = "Unauthorized: please log in and try again.";
+        } else if (
+          err.response?.data &&
+          typeof err.response.data === "object"
+        ) {
+          const data = err.response.data as { message?: string };
+          if (data.message) errorMessage = data.message;
+        }
+      }
       setState((prev) => ({
         ...prev,
         error: errorMessage,

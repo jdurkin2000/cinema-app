@@ -12,9 +12,11 @@ import { clearToken, getToken } from "@/libs/authStore";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import "./profile.css";
+import { useAuth } from "@/app/AuthProvider";
 
 export default function Profile() {
   const router = useRouter();
+  const { setUser } = useAuth();
   const [token, setToken] = useState<string | null>(null);
   const [data, setData] = useState<any>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -53,31 +55,40 @@ export default function Profile() {
     }
   }
 
-  async function saveProfile(e: FormEvent) {
+  async function saveProfile(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setMsg(null);
     setErr(null);
-    const target = e.target as any;
+    const fd = new FormData(e.currentTarget);
+    const nameVal = String(fd.get("name") || "").trim();
+    const line1Val = String(fd.get("line1") || "").trim();
+    const line2Val = String(fd.get("line2") || "").trim();
+    const cityVal = String(fd.get("city") || "").trim();
+    const stateFormVal = String(fd.get("state") || "").trim();
+    const zipVal = String(fd.get("zip") || "").trim();
+    const promosChecked = fd.get("promos") !== null;
 
-    if (!target.line1.value || !target.city.value || !target.state.value || !target.zip.value) {
+    if (!line1Val || !cityVal || !stateFormVal || !zipVal) {
       setErr("Please fill out all required address fields.");
       return;
     }
 
     try {
       await updateProfile(token!, {
-        firstLastName: target.name.value,
-        promotionsOptIn: target.promos.checked,
+        firstLastName: nameVal,
+        promotionsOptIn: promosChecked,
         address: {
-          line1: target.line1.value,
-          line2: target.line2.value,
-          city: target.city.value,
-          state: target.state.value,
-          zip: target.zip.value,
+          line1: line1Val,
+          line2: line2Val,
+          city: cityVal,
+          state: stateFormVal,
+          zip: zipVal,
         },
       });
 
       setMsg("Profile saved");
+      // Update global auth display name immediately (Navbar, etc.)
+      setUser(nameVal);
       await load(token!);
     } catch (x: any) {
       setErr(x?.response?.data?.message || "Update failed");
@@ -129,7 +140,12 @@ export default function Profile() {
   if (!data) return null;
 
   // Reactive boolean for disabling Save button
-  const canSave = name.trim() !== "" && addr1.trim() !== "" && city.trim() !== "" && stateVal.trim() !== "" && zip.trim() !== "";
+  const canSave =
+    name.trim() !== "" &&
+    addr1.trim() !== "" &&
+    city.trim() !== "" &&
+    stateVal.trim() !== "" &&
+    zip.trim() !== "";
 
   return (
     <div className="profile-container">
@@ -148,22 +164,24 @@ export default function Profile() {
       {/* Profile Form */}
       <form onSubmit={saveProfile} className="profile-section">
         <div className="section-title">Profile</div>
-        
+
         <input
           name="name"
           className="input"
           placeholder="Full name"
-          value={name}           // <-- controlled value
+          value={name} // <-- controlled value
           required
-          onChange={(e) => setName(e.target.value)}  // <-- update state
+          onChange={(e) => setName(e.target.value)} // <-- update state
         />
-
-       
 
         <input value={data.email} disabled className="input disabled" />
 
         <label className="checkbox-row">
-          <input name="promos" type="checkbox" defaultChecked={data.promotionsOptIn} />
+          <input
+            name="promos"
+            type="checkbox"
+            defaultChecked={data.promotionsOptIn}
+          />
           <span>Receive promotions</span>
         </label>
 
@@ -208,10 +226,7 @@ export default function Profile() {
           />
         </div>
 
-        <button
-          className="profile-btn-primary"
-          disabled={!canSave}
-        >
+        <button className="profile-btn-primary" disabled={!canSave}>
           Save
         </button>
       </form>
@@ -219,8 +234,21 @@ export default function Profile() {
       {/* Change Password */}
       <form onSubmit={changePwd} className="profile-section">
         <div className="section-title">Change password</div>
-        <input name="current" type="password" placeholder="Current password" required className="input" />
-        <input name="new" type="password" placeholder="New password" minLength={8} required className="input" />
+        <input
+          name="current"
+          type="password"
+          placeholder="Current password"
+          required
+          className="input"
+        />
+        <input
+          name="new"
+          type="password"
+          placeholder="New password"
+          minLength={8}
+          required
+          className="input"
+        />
         <button className="profile-btn-primary">Change</button>
       </form>
 
@@ -282,19 +310,66 @@ export default function Profile() {
                       setEditingCardId(null);
                       await load(token!);
                     } catch (x: any) {
-                      setErr(x?.response?.data?.message || "Update card failed");
+                      setErr(
+                        x?.response?.data?.message || "Update card failed"
+                      );
                     }
                   }}
                   className="grid-2 edit-card-grid"
                 >
-                  <input name="month" type="number" min={1} max={12} defaultValue={c.expMonth} required className="input" />
-                  <input name="year" type="number" min={2024} max={2100} defaultValue={c.expYear} required className="input" />
-                  <input name="billingName" className="input col-2" defaultValue={c.billingName} required />
-                  <input name="bline1" className="input col-2" defaultValue={c.billingAddress.line1} required />
-                  <input name="bline2" className="input col-2" defaultValue={c.billingAddress.line2} />
-                  <input name="bcity" className="input" defaultValue={c.billingAddress.city} required />
-                  <input name="bstate" className="input" defaultValue={c.billingAddress.state} required />
-                  <input name="bzip" className="input" defaultValue={c.billingAddress.zip} required />
+                  <input
+                    name="month"
+                    type="number"
+                    min={1}
+                    max={12}
+                    defaultValue={c.expMonth}
+                    required
+                    className="input"
+                  />
+                  <input
+                    name="year"
+                    type="number"
+                    min={2024}
+                    max={2100}
+                    defaultValue={c.expYear}
+                    required
+                    className="input"
+                  />
+                  <input
+                    name="billingName"
+                    className="input col-2"
+                    defaultValue={c.billingName}
+                    required
+                  />
+                  <input
+                    name="bline1"
+                    className="input col-2"
+                    defaultValue={c.billingAddress.line1}
+                    required
+                  />
+                  <input
+                    name="bline2"
+                    className="input col-2"
+                    defaultValue={c.billingAddress.line2}
+                  />
+                  <input
+                    name="bcity"
+                    className="input"
+                    defaultValue={c.billingAddress.city}
+                    required
+                  />
+                  <input
+                    name="bstate"
+                    className="input"
+                    defaultValue={c.billingAddress.state}
+                    required
+                  />
+                  <input
+                    name="bzip"
+                    className="input"
+                    defaultValue={c.billingAddress.zip}
+                    required
+                  />
                   <button className="profile-btn-primary col-2">Save</button>
                 </form>
               )}
@@ -304,14 +379,54 @@ export default function Profile() {
 
         {data.paymentCards.length < 4 && (
           <form onSubmit={addCardSubmit} className="grid-2 add-card-grid">
-            <input name="number" className="input col-2" placeholder="Card number" required />
-            <input name="month" className="input" placeholder="MM" type="number" min={1} max={12} required />
-            <input name="year" className="input" placeholder="YYYY" type="number" min={2024} max={2100} required />
-            <input name="billingName" className="input col-2" placeholder="Billing name" required />
-            <input name="bline1" className="input col-2" placeholder="Billing address line 1" required />
-            <input name="bline2" className="input col-2" placeholder="Billing address line 2" />
+            <input
+              name="number"
+              className="input col-2"
+              placeholder="Card number"
+              required
+            />
+            <input
+              name="month"
+              className="input"
+              placeholder="MM"
+              type="number"
+              min={1}
+              max={12}
+              required
+            />
+            <input
+              name="year"
+              className="input"
+              placeholder="YYYY"
+              type="number"
+              min={2024}
+              max={2100}
+              required
+            />
+            <input
+              name="billingName"
+              className="input col-2"
+              placeholder="Billing name"
+              required
+            />
+            <input
+              name="bline1"
+              className="input col-2"
+              placeholder="Billing address line 1"
+              required
+            />
+            <input
+              name="bline2"
+              className="input col-2"
+              placeholder="Billing address line 2"
+            />
             <input name="bcity" className="input" placeholder="City" required />
-            <input name="bstate" className="input" placeholder="State" required />
+            <input
+              name="bstate"
+              className="input"
+              placeholder="State"
+              required
+            />
             <input name="bzip" className="input" placeholder="ZIP" required />
             <button className="profile-btn-primary col-2">Add card</button>
           </form>

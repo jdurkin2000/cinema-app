@@ -44,9 +44,24 @@ export default function ConfirmPage() {
     setError(null);
 
     try {
+      const token =
+        typeof window !== "undefined"
+          ? localStorage.getItem("authToken") ||
+            sessionStorage.getItem("authToken")
+          : null;
+
+      if (!token) {
+        setError("Please log in to complete your booking.");
+        setLoading(false);
+        return;
+      }
+
       const res = await fetch("http://localhost:8080/api/bookings", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({
           showtime,
           seats,
@@ -62,6 +77,9 @@ export default function ConfirmPage() {
           return;
         }
         const text = await res.text();
+        if (res.status === 401 || res.status === 403) {
+          throw new Error("Unauthorized: please log in and try again.");
+        }
         throw new Error(text || `Status ${res.status}`);
       }
 
@@ -236,8 +254,26 @@ export default function ConfirmPage() {
       </div>
 
       {error && (
-        <div className="bg-red-900 border border-red-600 text-red-200 px-4 py-3 rounded w-full max-w-xl">
-          {error}
+        <div className="bg-red-900 border border-red-600 text-red-200 px-4 py-3 rounded w-full max-w-xl space-y-2">
+          <div>{error}</div>
+          {(() => {
+            const needsLogin = /log in/i.test(error);
+            if (!needsLogin) return null;
+            const nextUrl = (() => {
+              if (typeof window === "undefined") return "/";
+              const url = new URL(window.location.href);
+              return url.pathname + (url.search || "");
+            })();
+            const loginHref = `/login?next=${encodeURIComponent(nextUrl)}`;
+            return (
+              <a
+                href={loginHref}
+                className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm"
+              >
+                Go to Login
+              </a>
+            );
+          })()}
         </div>
       )}
 
