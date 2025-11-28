@@ -13,9 +13,12 @@ export default function EditMovieListPage() {
   useEffect(() => {
     async function fetchMovies() {
       try {
-        const res = await axios.get<Movie[]>("http://localhost:8080/api/movies", {
-          transformResponse: [(data) => (data ? JSON.parse(data) : null)],
-        });
+        const res = await axios.get<Movie[]>(
+          "http://localhost:8080/api/movies",
+          {
+            transformResponse: [(data) => (data ? JSON.parse(data) : null)],
+          }
+        );
         setMovies(Array.isArray(res.data) ? res.data : []);
       } catch (err: any) {
         console.error("Error fetching movies:", err);
@@ -55,13 +58,18 @@ export default function EditMovieListPage() {
     <main className="max-w-6xl mx-auto p-8 bg-white">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-3xl font-bold">Edit Movies</h1>
-        <Link href="/system-admin" className="bg-gray-500 hover:bg-gray-600 px-4 py-2 rounded text-white">
+        <Link
+          href="/system-admin"
+          className="bg-gray-500 hover:bg-gray-600 px-4 py-2 rounded text-white"
+        >
           Back to Admin
         </Link>
       </div>
 
       {movies.length === 0 ? (
-        <p className="text-lg text-gray-600">No movies found in the database.</p>
+        <p className="text-lg text-gray-600">
+          No movies found in the database.
+        </p>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {movies.map((movie) => (
@@ -71,23 +79,44 @@ export default function EditMovieListPage() {
               className="border border-gray-300 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition cursor-pointer"
             >
               <div className="bg-gray-100 h-48 overflow-hidden flex items-center justify-center">
-                {movie.poster ? (
-                  <img
-                    src={movie.poster}
-                    alt={movie.title}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = "none";
-                    }}
-                  />
-                ) : (
-                  <span className="text-gray-400">No Poster</span>
-                )}
+                {(() => {
+                  const safeImageSrc = (src?: string | null) => {
+                    if (!src) return "/poster_loading.png";
+                    if (
+                      src.startsWith("/") ||
+                      src.startsWith("http://") ||
+                      src.startsWith("https://")
+                    )
+                      return src;
+                    return "/poster_loading.png";
+                  };
+                  return movie.poster ? (
+                    <img
+                      src={safeImageSrc(movie.poster)}
+                      alt={movie.title}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        try {
+                          (e.target as HTMLImageElement).src =
+                            "/poster_loading.png";
+                        } catch {
+                          (e.target as HTMLImageElement).style.display = "none";
+                        }
+                      }}
+                    />
+                  ) : (
+                    <span className="text-gray-400">No Poster</span>
+                  );
+                })()}
               </div>
               <div className="p-4">
-                <h2 className="text-lg font-semibold mb-2 line-clamp-2 text-black">{movie.title}</h2>
+                <h2 className="text-lg font-semibold mb-2 line-clamp-2 text-black">
+                  {movie.title}
+                </h2>
                 <p className="text-sm text-gray-600 mb-2">{movie.rating}</p>
-                <p className="text-xs text-gray-500 line-clamp-3">{movie.synopsis || "No description"}</p>
+                <p className="text-xs text-gray-500 line-clamp-3">
+                  {movie.synopsis || "No description"}
+                </p>
               </div>
             </Link>
           ))}

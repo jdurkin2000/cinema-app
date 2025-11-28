@@ -7,6 +7,7 @@ import {
   CreatePromotionPayload,
   sendPromotion,
   Promotion,
+  getPromotions,
 } from "@/libs/cinemaApi";
 import { formatDate } from "@/utils/dateTimeUtil";
 import "./promotions.css";
@@ -42,9 +43,7 @@ export default function PromotionsPage() {
   const loadPromotions = async () => {
     setPromosLoading(true);
     try {
-      const res = await fetch("http://localhost:8080/api/promotions");
-      if (!res.ok) throw new Error(`Status ${res.status}`);
-      const data: Promotion[] = await res.json();
+      const data = await getPromotions();
       setPromotions(data || []);
     } catch (err) {
       console.error("Failed to load promotions:", err);

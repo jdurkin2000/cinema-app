@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
+import ValidatedImage from "@/components/ValidatedImage";
 import { useMovies } from "@/libs/cinemaApi";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -9,6 +9,19 @@ import "./movieDetails.css";
 import { getShowtimesForMovie } from "@/libs/showingsApi";
 import { formatDateTime } from "@/utils/dateTimeUtil";
 import { Showtime } from "@/models/shows";
+
+function safeImageSrc(src?: string | null) {
+  const placeholder = "/poster_loading.png";
+  if (!src) return placeholder;
+  if (src.startsWith("/")) return src;
+  try {
+    const u = new URL(src);
+    if (u.protocol === "http:" || u.protocol === "https:") return src;
+    return placeholder;
+  } catch {
+    return placeholder;
+  }
+}
 
 export default function Home() {
   const params = useSearchParams();
@@ -64,9 +77,9 @@ export default function Home() {
             {isLoading ? (
               <div className="skeleton" style={{ height: "420px" }} />
             ) : (
-              <Image
-                src={movie?.poster || ""}
-                alt={`${movie?.title} poster`}
+              <ValidatedImage
+                src={safeImageSrc(movie?.poster)}
+                alt={`${movie?.title ?? "movie"} poster`}
                 width={800}
                 height={1200}
                 className="poster-image"
@@ -138,7 +151,7 @@ export default function Home() {
             <div className="trailer-wrapper">
               <iframe
                 src={movie.trailer}
-                title={`${movie?.title} trailer`}
+                title={`${movie?.title ?? "movie"} trailer`}
                 allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
               />
@@ -149,7 +162,6 @@ export default function Home() {
             </p>
           )}
 
-          {/* Showtimes */}
           <h2 className="section-title">Available showtimes</h2>
           {isLoading ? (
             <div className="showtimes-list">
@@ -184,7 +196,7 @@ export default function Home() {
         {/* Showtime Modal */}
         {isShowtimeOpen && (
           <div className="showtime-modal">
-            <div className="showtime-modal-content">
+            <div className="showtime-modal-content p-2">
               <h3 className="section-title">Confirm your showtime</h3>
               <p className="section-text" style={{ marginTop: "0.5rem" }}>
                 {selectedShowtime

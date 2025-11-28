@@ -3,6 +3,7 @@ import axios from "axios";
 import Movie from "@/models/movie";
 import { dateReviver, formatDateTime } from "@/utils/dateTimeUtil";
 import { Showroom as ShowroomModel } from "@/models/shows";
+import { getToken } from "@/libs/authStore";
 
 const baseApiString = "http://localhost:8080/api/movies";
 
@@ -213,10 +214,7 @@ export async function createMovie(
   try {
     // Prefer explicit token, fallback to localStorage (client-side)
     const token =
-      opts?.token ??
-      (typeof window !== "undefined"
-        ? localStorage.getItem("authToken")
-        : null);
+      opts?.token ?? (typeof window !== "undefined" ? getToken() : null);
 
     const res = await axios.post<Movie>(baseApiString, payload, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -258,6 +256,32 @@ export type CreatePromotionPayload = {
 const promoApiBase = "http://localhost:8080/api/promotions";
 
 /**
+ * Fetch all promotions (requires authentication)
+ */
+export async function getPromotions(opts?: { token?: string }) {
+  try {
+    const token =
+      opts?.token ?? (typeof window !== "undefined" ? getToken() : null);
+
+    const res = await axios.get<Promotion[]>(promoApiBase, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+
+    return res.data;
+  } catch (err: unknown) {
+    // If no promotions exist the backend returns 404 — treat that as empty list
+    if (axios.isAxiosError(err) && err.response?.status === 404) {
+      return [];
+    }
+    const info = buildError(err);
+    type JsError = InstanceType<typeof globalThis.Error>;
+    const e: JsError & { status?: number } = new globalThis.Error(info.message);
+    e.status = info.status ?? undefined;
+    throw e;
+  }
+}
+
+/**
  * Create a new promotion (Admin only).
  * Validates on the backend: code, dates, discount%.
  */
@@ -268,10 +292,7 @@ export async function createPromotion(
   try {
     // Prefer explicit token, fallback to localStorage (client-side)
     const token =
-      opts?.token ??
-      (typeof window !== "undefined"
-        ? localStorage.getItem("authToken")
-        : null);
+      opts?.token ?? (typeof window !== "undefined" ? getToken() : null);
 
     const res = await axios.post<Promotion>(promoApiBase, payload, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -297,10 +318,7 @@ export async function sendPromotion(
 ): Promise<{ promotionId: string; emailsSent: number }> {
   try {
     const token =
-      opts?.token ??
-      (typeof window !== "undefined"
-        ? localStorage.getItem("authToken")
-        : null);
+      opts?.token ?? (typeof window !== "undefined" ? getToken() : null);
 
     const res = await axios.post<{ promotionId: string; emailsSent: number }>(
       `${promoApiBase}/${promotionId}/send`,
@@ -357,10 +375,7 @@ export async function deleteShowtimeFromShowroom(
 ): Promise<void> {
   try {
     const token =
-      opts?.token ??
-      (typeof window !== "undefined"
-        ? localStorage.getItem("authToken")
-        : null);
+      opts?.token ?? (typeof window !== "undefined" ? getToken() : null);
 
     await axios.delete(`${showroomApiBase}/${showroomId}/showtimes`, {
       data: payload,
@@ -409,10 +424,7 @@ export async function updateMovie(
 ): Promise<Movie> {
   try {
     const token =
-      opts?.token ??
-      (typeof window !== "undefined"
-        ? localStorage.getItem("authToken")
-        : null);
+      opts?.token ?? (typeof window !== "undefined" ? getToken() : null);
 
     const res = await axios.put<Movie>(`${baseApiString}/${movieId}`, payload, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},

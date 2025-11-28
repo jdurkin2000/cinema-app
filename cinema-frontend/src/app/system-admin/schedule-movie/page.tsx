@@ -310,7 +310,33 @@ export default function ScheduleMoviePage() {
                     }`}
                     onClick={() => handleMovieSelect(movie.id)}
                   >
-                    <img src={movie.poster} alt={movie.title} />
+                    {(() => {
+                      const safeImageSrc = (src?: string | null) => {
+                        if (!src) return "/poster_loading.png";
+                        if (
+                          src.startsWith("/") ||
+                          src.startsWith("http://") ||
+                          src.startsWith("https://")
+                        )
+                          return src;
+                        return "/poster_loading.png";
+                      };
+                      return (
+                        <img
+                          src={safeImageSrc(movie.poster)}
+                          alt={movie.title}
+                          onError={(e) => {
+                            try {
+                              (e.target as HTMLImageElement).src =
+                                "/poster_loading.png";
+                            } catch {
+                              (e.target as HTMLImageElement).style.display =
+                                "none";
+                            }
+                          }}
+                        />
+                      );
+                    })()}
                     <div className="movie-info">
                       <h3>{movie.title}</h3>
                       <p className="rating">{movie.rating}</p>

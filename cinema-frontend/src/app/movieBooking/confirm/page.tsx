@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { dateReviver, useMovies } from "@/libs/cinemaApi";
+import api from "@/libs/apiClient";
 import { formatDateTime } from "@/utils/dateTimeUtil";
 import { Showtime } from "@/models/shows";
 
@@ -42,48 +43,10 @@ export default function ConfirmPage() {
     if (!showtime?.movieId || !showtime || seats.length === 0) return;
     setLoading(true);
     setError(null);
-
     try {
-      const token =
-        typeof window !== "undefined"
-          ? localStorage.getItem("authToken") ||
-            sessionStorage.getItem("authToken")
-          : null;
-
-      if (!token) {
-        setError("Please log in to complete your booking.");
-        setLoading(false);
-        return;
-      }
-
-      const res = await fetch("http://localhost:8080/api/bookings", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          showtime,
-          seats,
-        }),
-      });
-
-      if (!res.ok) {
-        if (res.status === 409) {
-          setError(
-            "One or more selected seats have already been booked. Please choose different seats."
-          );
-          setLoading(false);
-          return;
-        }
-        const text = await res.text();
-        if (res.status === 401 || res.status === 403) {
-          throw new Error("Unauthorized: please log in and try again.");
-        }
-        throw new Error(text || `Status ${res.status}`);
-      }
-
-      const saved = await res.json();
+      // use shared axios instance which injects Authorization header
+      const resp = await api.post("/bookings", { showtime, seats });
+      const saved = resp.data;
 
       const booking = {
         movieId: showtime?.movieId,
@@ -108,7 +71,9 @@ export default function ConfirmPage() {
         console.warn("Failed to save booking locally:", err);
       }
 
-      router.push("/profile");
+      // Show confirmation modal instead of redirecting to profile
+      setShowSuccessModal(true);
+      setSavedBooking(booking);
     } catch (err: unknown) {
       if (err instanceof Error) {
         console.error("Booking failed:", err);
@@ -121,6 +86,16 @@ export default function ConfirmPage() {
       setLoading(false);
     }
   };
+
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  type SavedBooking = {
+    movieTitle?: string;
+    showtime?: string;
+    seats?: string[];
+    [key: string]: unknown;
+  };
+
+  const [savedBooking, setSavedBooking] = useState<SavedBooking | null>(null);
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col items-center p-6 space-y-6">
@@ -295,6 +270,47 @@ export default function ConfirmPage() {
           Back
         </button>
       </div>
+
+      {/* Success modal shown after booking completes */}
+      {showSuccessModal && savedBooking && (
+        <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-24">
+          <div
+            className="absolute inset-0 bg-black/60"
+            onClick={() => setShowSuccessModal(false)}
+          />
+          <div className="relative bg-gray-900 text-white rounded-lg shadow-xl w-full max-w-md p-6">
+            <h2 className="text-2xl font-bold mb-2">Booking Confirmed</h2>
+            <p className="mb-2">Your seats have been reserved.</p>
+            <div className="mb-4">
+              <div className="text-sm text-gray-300">Movie</div>
+              <div className="font-semibold">{savedBooking.movieTitle}</div>
+              <div className="text-sm text-gray-300 mt-2">Showtime</div>
+              <div className="font-semibold">{savedBooking.showtime}</div>
+              <div className="text-sm text-gray-300 mt-2">Seats</div>
+              <div className="font-semibold">
+                {(savedBooking.seats || []).join(", ")}
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button
+                className="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded"
+                onClick={() => setShowSuccessModal(false)}
+              >
+                Close
+              </button>
+              <button
+                className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-white"
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  router.push("/");
+                }}
+              >
+                Back to Homepage
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -9,7 +9,7 @@ import {
 } from "@/libs/cinemaApi";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
-import Image from "next/image";
+import ValidatedImage from "@/components/ValidatedImage";
 import { Showtime } from "@/models/shows";
 
 // === NEW: HARDCODED UNAVAILABLE SEATS ===
@@ -166,9 +166,25 @@ export default function Home() {
 
   return (
     <div className="flex flex-col font-sans items-center justify-center space-y-6 min-h-screen bg-black text-white p-4">
+      {selectionError && (
+        <div
+          role="alert"
+          className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-xl px-4"
+        >
+          <div className="bg-red-600 text-white px-4 py-2 rounded shadow-lg text-center">
+            {selectionError}
+          </div>
+        </div>
+      )}
       <h1 className="text-3xl font-bold">{movie.title}</h1>
-      <Image
-        src={movie.poster}
+      <ValidatedImage
+        src={
+          movie?.poster && typeof movie.poster === "string"
+            ? movie.poster.startsWith("/") || movie.poster.startsWith("http")
+              ? movie.poster
+              : "/poster_loading.png"
+            : "/poster_loading.png"
+        }
         alt={`Movie poster of ${movie.title}`}
         width={200}
         height={250}
@@ -221,12 +237,7 @@ export default function Home() {
       {/* ==================================== */}
 
       <div className="flex flex-col items-center space-y-4">
-        {/* Error message for seat selection */}
-        {selectionError && (
-          <p className="text-red-400 text-center font-semibold">
-            {selectionError}
-          </p>
-        )}
+        {/* Error message for seat selection is now rendered as a fixed top alert */}
 
         <div
           className="bg-white text-black w-72 md:w-125 h-8 flex items-center justify-center font-bold rounded-sm shadow-lg shadow-white/30"
@@ -288,7 +299,7 @@ export default function Home() {
       </div>
 
       <button
-        className="bg-purple-500 hover:bg-purple-600 transition-colors rounded-2xl px-4 py-2 text-2xl"
+        className="bg-purple-500 hover:bg-purple-600 hover:cursor-pointer transition-colors rounded-2xl px-4 py-2 text-2xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-purple-500"
         disabled={selectedSeats.length !== totalTickets || totalTickets === 0}
         onClick={() => {
           if (selectedSeats.length !== totalTickets || totalTickets === 0)

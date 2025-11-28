@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import ValidatedImage from "@/components/ValidatedImage";
 import "./page.css";
 import Movie from "@/models/movie";
 import { ReactElement, useState, useEffect } from "react";
@@ -90,13 +90,33 @@ function getMovieList(movies: Movie[]): ReactElement {
       {movies.map((movie) => (
         <li key={movie.id}>
           <Link href={{ pathname: "/movieDetails", query: { id: movie.id } }}>
-            <Image
-              src={movie.poster}
-              alt={`Movie poster of ${movie.title}`}
-              width={200}
-              height={250}
-              className="movie-poster"
-            />
+            {(() => {
+              const safeImageSrc = (src?: string | null) => {
+                if (!src) return "/poster_loading.png";
+                if (
+                  src.startsWith("/") ||
+                  src.startsWith("http://") ||
+                  src.startsWith("https://")
+                )
+                  return src;
+                return "/poster_loading.png";
+              };
+              const posterSrc = safeImageSrc(movie.poster);
+              return (
+                <div className="movie-card">
+                  <ValidatedImage
+                    src={posterSrc}
+                    alt={`Movie poster of ${movie.title}`}
+                    width={200}
+                    height={250}
+                    className="movie-poster"
+                  />
+                  <div className="movie-title text-center mt-2 text-sm text-shadow-white">
+                    {movie.title}
+                  </div>
+                </div>
+              );
+            })()}
           </Link>
         </li>
       ))}
@@ -112,10 +132,13 @@ function filterMovies(movies: Movie[], nameQuery: string, genresQuery: string) {
     .filter((g) => g.length > 0);
 
   return movies.filter((m) => {
-    const matchesName = name.length === 0 || m.title.toLowerCase().includes(name);
+    const matchesName =
+      name.length === 0 || m.title.toLowerCase().includes(name);
     const matchesGenres =
       genreParts.length === 0 ||
-      genreParts.every((g) => m.genres.map((gg) => gg.toLowerCase()).some((gg) => gg.includes(g)));
+      genreParts.every((g) =>
+        m.genres.map((gg) => gg.toLowerCase()).some((gg) => gg.includes(g))
+      );
     return matchesName && matchesGenres;
   });
 }

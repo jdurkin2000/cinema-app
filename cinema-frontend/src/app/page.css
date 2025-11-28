@@ -1,8 +1,9 @@
 /* Global styles */
-html, body {
+html,
+body {
   height: 100%;
   margin: 0;
-  background: linear-gradient(to bottom right, #0f172a, #211122, #0f172a);  
+  background: linear-gradient(to bottom right, #0f172a, #211122, #0f172a);
 }
 
 /* Search form */
@@ -10,30 +11,32 @@ html, body {
   display: flex;
   gap: 0.75rem;
   align-items: center;
-  margin: 1rem auto;       /* center horizontally */
-  max-width: 600px;        /* fixed width */
+  margin: 1rem auto;
+  /* center horizontally */
+  max-width: 600px;
+  /* fixed width */
 }
 
 /* Search inputs */
 .movie-search-input {
   flex: 1;
-  border: 1px solid rgba(255,255,255,0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 0.5rem;
   padding: 0.25rem 0.5rem;
-  background-color: rgba(255,255,255,0.05);
+  background-color: rgba(255, 255, 255, 0.05);
   color: #fdffe8;
   outline: none;
   transition: all 0.3s;
 }
 
 .movie-search-input::placeholder {
-  color: rgba(255,255,255,0.6);
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .movie-search-input:focus {
   border-color: #550786;
-  box-shadow: 0 0 6px rgba(85,7,134,0.5);
-  background-color: rgba(255,255,255,0.1);
+  box-shadow: 0 0 6px rgba(85, 7, 134, 0.5);
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 /* Submit button */
@@ -55,23 +58,29 @@ html, body {
 /* Filter display below search form */
 .filter-display {
   display: flex;
-  flex-wrap: wrap;             /* wrap long filters onto multiple lines */
+  flex-wrap: wrap;
+  /* wrap long filters onto multiple lines */
   gap: 0.5rem;
-  margin: 0.5rem auto 1rem auto; /* spacing below search bar */
-  max-width: 600px;            /* match search form width */
+  margin: 0.5rem auto 1rem auto;
+  /* spacing below search bar */
+  max-width: 600px;
+  /* match search form width */
   padding: 0.5rem 0.75rem;
   border-radius: 0.75rem;
-  background: rgba(36,0,70,0.5); /* frosted purple */
+  background: rgba(36, 0, 70, 0.5);
+  /* frosted purple */
   backdrop-filter: blur(6px);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
   color: #fdffe8;
   font-weight: 500;
-  white-space: normal;          /* wrap text naturally */
+  white-space: normal;
+  /* wrap text naturally */
 }
 
 /* Remove filters button */
 .remove-filters-button {
-  margin-left: auto;           /* push to right end */
+  margin-left: auto;
+  /* push to right end */
   background: #8e2de2;
   border: none;
   border-radius: 0.5rem;
@@ -93,7 +102,8 @@ html, body {
 .movie-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 1.25rem; /* space-x-5 space-y-5 */
+  gap: 1.25rem;
+  /* space-x-5 space-y-5 */
   list-style: none;
   padding: 0;
   margin: 1rem 0 0 0;
@@ -105,7 +115,8 @@ html, body {
 
 /* Movie poster styling */
 .movie-poster {
-  border-radius: 0.5rem; /* rounded-lg */
+  border-radius: 0.5rem;
+  /* rounded-lg */
   transition: transform 0.3s;
 }
 
@@ -115,6 +126,21 @@ html, body {
 
 .movie-poster:active {
   transform: scale(0.95);
+}
+
+/* Ensure all posters render at a consistent size */
+.movie-card {
+  width: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.movie-poster {
+  width: 200px !important;
+  height: 250px !important;
+  object-fit: cover;
+  display: block;
 }
 
 /* Now Showing / Upcoming text */
