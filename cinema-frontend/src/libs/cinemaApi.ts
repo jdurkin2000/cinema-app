@@ -112,7 +112,7 @@ export function useMovies(params: MovieQueryParams = {}) {
           (data) => (data ? JSON.parse(data, dateReviver) : null),
         ],
       })
-      .then((res) => {
+      .then(async (res) => {
         // If res.data is an array, use it; if single movie, wrap in array
         // console.log(res.data);
         const dataArray = Array.isArray(res.data)
@@ -121,7 +121,29 @@ export function useMovies(params: MovieQueryParams = {}) {
           ? [res.data]
           : [];
 
+        // If no movies returned, fetch upcoming (independent of showrooms)
         if (dataArray.length === 0) {
+          try {
+            const upcoming = await axios.get<Movie[]>(
+              `${baseApiString}/upcoming`,
+              {
+                transformResponse: [
+                  (data) => (data ? JSON.parse(data, dateReviver) : null),
+                ],
+              }
+            );
+            const up = Array.isArray(upcoming.data) ? upcoming.data : [];
+            if (up.length > 0) {
+              setMovies(up);
+              setStatus({
+                currentState: "Success",
+                message: "Loaded upcoming movies",
+              });
+              return;
+            }
+          } catch (e) {
+            // fall through to not found/error
+          }
           setStatus({
             currentState: "Not Found",
             message: "Movies not found.",

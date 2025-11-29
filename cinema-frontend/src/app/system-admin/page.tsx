@@ -39,16 +39,8 @@ export default function AdminPage() {
 
         {/* Admin Actions Grid */}
         <section className="admin-grid">
-          <Link href="/system-admin/add-movie" className={buttonStyle}>
-            <span>Add Movie</span>
-          </Link>
-
-          <Link href="/system-admin/edit-movie" className={buttonStyle}>
-            <span>Edit Movie</span>
-          </Link>
-
-          <Link href="/system-admin/schedule-movie" className={buttonStyle}>
-            <span>Schedule Movie</span>
+          <Link href="/system-admin/manage-movies" className={buttonStyle}>
+            <span>Manage Movies</span>
           </Link>
 
           <Link href="/system-admin/statistics" className={buttonStyle}>

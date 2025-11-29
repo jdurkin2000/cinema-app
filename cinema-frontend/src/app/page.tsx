@@ -75,9 +75,11 @@ export default function Home() {
         <>
           <p className="now-showing">Now Showing</p>
           {getMovieList(filterMovies(nowShowingMovies, nameQuery, genresQuery))}
+          {nowShowingMovies.length == 0 && <p>No movies have been scheduled yet.</p>}
 
           <div className="now-showing">Upcoming</div>
           {getMovieList(filterMovies(upcomingMovies, nameQuery, genresQuery))}
+          {upcomingMovies.length == 0 && <p>No movies have been added to the database.</p>}
         </>
       )}
     </div>

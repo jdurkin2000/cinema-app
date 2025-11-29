@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import edu.uga.csci4050.cinema.model.Showroom;
 import edu.uga.csci4050.cinema.repository.ShowroomRepository;
 import edu.uga.csci4050.cinema.type.Showtime;
-import edu.uga.csci4050.cinema.util.HttpUtils;
+// import edu.uga.csci4050.cinema.util.HttpUtils;
 
 @RestController
 @RequestMapping("api/showrooms")
@@ -27,7 +27,9 @@ public class ShowroomController {
 
     @GetMapping
     public ResponseEntity<List<Showroom>> getAllShowrooms() {
-        return HttpUtils.buildResponseEntity(showroomRepository.findAll(), "No showrooms found");
+        // Return 200 with [] when none exist to avoid client 404s
+        List<Showroom> all = showroomRepository.findAll();
+        return ResponseEntity.ok(all);
     }
 
     @PostMapping
@@ -74,6 +76,7 @@ public class ShowroomController {
 
     @GetMapping("/{id}/showtimes")
     public ResponseEntity<Showroom> getShowroomById(@PathVariable String id) {
+        // For individual showroom, still return 404 if not found (id-specific request)
         return showroomRepository.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());

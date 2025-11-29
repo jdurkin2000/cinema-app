@@ -12,7 +12,7 @@ import java.util.List;
 public class User {
 
     public enum Role { ADMIN, USER }
-    public enum Status { INACTIVE, ACTIVE }
+    public enum Status { INACTIVE, ACTIVE, SUSPENDED }
 
     @Id
     private String id;
