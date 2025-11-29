@@ -261,7 +261,9 @@ export default function EditMoviePage() {
               value={movieData.rating || "NR"}
               onChange={(e) => handleInputChange("rating", e.target.value)}
             >
-              <option value="NR" className="text-black">NR</option>
+              <option value="NR" className="text-black">
+                NR
+              </option>
               <option value="G">G</option>
               <option value="PG">PG</option>
               <option value="PG-13">PG-13</option>

@@ -28,8 +28,13 @@ import java.time.ZoneId;
 @Component
 public class DatabaseMigrationUtil {
 
-    @Autowired
-    private MongoTemplate mongoTemplate;
+    private final MongoTemplate mongoTemplate;
+
+    // Use constructor injection to ensure mongoTemplate is not null when methods
+    // run
+    public DatabaseMigrationUtil(MongoTemplate mongoTemplate) {
+        this.mongoTemplate = mongoTemplate;
+    }
 
     private static final ZoneId DEFAULT_ZONE = ZoneId.of("America/New_York");
 

@@ -92,26 +92,23 @@ def upsert_movies():
         coll = db[COLLECTION_NAME]
 
         inserted = 0
-        skipped = 0
+        replaced = 0
 
         for m in SAMPLE_MOVIES:
             title = m.get("title")
             if not title:
                 continue
 
-            # Only insert if a movie with same title does not exist
-            existing = coll.find_one({"title": title})
-            if existing:
-                print(f"- Skipping existing movie: {title}")
-                skipped += 1
-                continue
+            # Replace the existing document with the same title or insert if missing
+            result = coll.replace_one({"title": title}, m, upsert=True)
+            if result.matched_count > 0:
+                print(f"~ Replaced movie: {title}")
+                replaced += 1
+            else:
+                print(f"+ Inserted movie: {title}")
+                inserted += 1
 
-            # Insert document
-            coll.insert_one(m)
-            print(f"+ Inserted movie: {title}")
-            inserted += 1
-
-        print(f"\nDone. Inserted: {inserted}. Skipped: {skipped}.")
+        print(f"\nDone. Inserted: {inserted}. Replaced: {replaced}.")
 
     except ConnectionFailure:
         print("✗ Error: Could not connect to MongoDB. Check your network/URI.")

@@ -4,6 +4,9 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+import edu.uga.csci4050.cinema.util.DatabaseMigrationUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+
 @SpringBootApplication
 public class CinemaApplication implements CommandLineRunner {
 
