@@ -44,6 +44,7 @@ export default function ConfirmPage() {
   const [taxLoading, setTaxLoading] = useState(false);
   const [taxError, setTaxError] = useState<string | null>(null);
   const [hasProfileZip, setHasProfileZip] = useState<boolean>(false);
+  const [hasPaymentCard, setHasPaymentCard] = useState<boolean | null>(null);
   // Stable login redirect href to avoid hydration mismatch
   const [loginHref, setLoginHref] = useState<string>("/login?next=%2F");
 
@@ -74,6 +75,11 @@ export default function ConfirmPage() {
         const token = getToken();
         if (!token) return;
         const profile = await me(token);
+        if (profile) {
+          setHasPaymentCard(
+            Array.isArray(profile.paymentCards) && profile.paymentCards.length > 0
+          );
+        }
         if (profile?.address?.zip) {
           const profileZip = profile.address.zip.replace(/\D/g, "").slice(0, 5);
           setZipCode(profileZip);
@@ -250,6 +256,15 @@ export default function ConfirmPage() {
             You must be logged in to confirm this booking.
             <a href={loginHref} className="ml-2 underline hover:text-white">
               Log in
+            </a>
+          </div>
+        )}
+
+        {isLoggedIn && hasPaymentCard === false && (
+          <div className="mb-4 rounded border border-yellow-600 bg-yellow-900 bg-opacity-40 p-3 text-sm text-yellow-200">
+            You don't have a payment card associated with your account.
+            <a href="/profile" className="ml-2 underline hover:text-white">
+              Add a payment method
             </a>
           </div>
         )}
@@ -477,7 +492,12 @@ export default function ConfirmPage() {
         <button
           className="bg-green-600 hover:bg-green-700 px-5 py-2 rounded text-lg disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={handleConfirm}
-          disabled={seats.length === 0 || loading || !isLoggedIn}
+          disabled={
+            seats.length === 0 ||
+            loading ||
+            !isLoggedIn ||
+            (isLoggedIn && hasPaymentCard === false)
+          }
         >
           {isLoggedIn
             ? loading
