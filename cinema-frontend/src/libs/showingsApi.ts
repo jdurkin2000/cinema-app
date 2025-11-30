@@ -1,7 +1,7 @@
 import { Showroom, Showtime } from "@/models/shows";
 import Movie from "@/models/movie";
 import axios from "axios";
-import { toISOString, ensureDate } from "@/utils/dateTimeUtil";
+import { toISOString, ensureDate, fromDateInputString } from "@/utils/dateTimeUtil";
 
 const MOVIE_DURATION_MS = 3 * 60 * 60 * 1000; // 3 hours
 const SHOWROOMS_API = "http://localhost:8080/api/showrooms";
@@ -224,6 +224,49 @@ export async function getMovieIdsFromShowrooms(): Promise<string[]> {
     return Array.from(movieIds);
   } catch (error) {
     console.error("Error fetching showrooms:", error);
+    return [];
+  }
+}
+
+/**
+ * Fetch movie IDs that have at least one showtime on the provided date.
+ * @param date - Date or date-string to check (only date component is used)
+ */
+export async function getMovieIdsForDate(date: Date | string): Promise<string[]> {
+  try {
+    // If caller passed a date string from an <input type="date">, parse it as local
+    // midnight so comparisons use the same local-day semantics as the UI.
+    let target: Date | null = null;
+    if (typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      target = fromDateInputString(date);
+    } else {
+      target = ensureDate(date);
+    }
+
+    if (!target) return [];
+
+    const res = await axios.get<Showroom[]>(SHOWROOMS_API);
+    const ids = new Set<string>();
+
+    res.data.forEach((showroom) => {
+      showroom.showtimes?.forEach((st) => {
+        const stDate = ensureDate(st.start);
+        if (!stDate || !st.movieId) return;
+
+        // Compare using local date components (year, month, day)
+        if (
+          stDate.getFullYear() === target!.getFullYear() &&
+          stDate.getMonth() === target!.getMonth() &&
+          stDate.getDate() === target!.getDate()
+        ) {
+          ids.add(st.movieId);
+        }
+      });
+    });
+
+    return Array.from(ids);
+  } catch (err) {
+    console.error("Error fetching movie IDs for date:", err);
     return [];
   }
 }
