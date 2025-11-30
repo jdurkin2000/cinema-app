@@ -149,3 +149,10 @@ body {
   font-weight: 600;
   margin-top: 1rem;
 }
+
+/* Ensure movie title never inherits a white background from other pages */
+.movie-title {
+  background: transparent !important;
+  padding: 0;
+  display: block;
+}
