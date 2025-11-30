@@ -85,9 +85,17 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody @Valid LoginRequest body) {
         var u = users.findByEmail(body.email.toLowerCase()).orElse(null);
-        if (u == null || !u.isEmailVerified() || u.getStatus() != User.Status.ACTIVE
-                || !encoder.matches(body.password, u.getPasswordHash())) {
-            return ResponseEntity.status(401).body(Map.of("message", "Invalid credentials or account not verified"));
+        if (u == null || !encoder.matches(body.password, u.getPasswordHash())) {
+            return ResponseEntity.status(401).body(Map.of("message", "Invalid credentials"));
+        }
+        if (!u.isEmailVerified()) {
+            return ResponseEntity.status(401).body(Map.of("message", "Account not verified"));
+        }
+        if (u.getStatus() == User.Status.SUSPENDED) {
+            return ResponseEntity.status(403).body(Map.of("message", "Account suspended"));
+        }
+        if (u.getStatus() != User.Status.ACTIVE) {
+            return ResponseEntity.status(401).body(Map.of("message", "Account inactive"));
         }
         String token = jwt.issue(u.getEmail(), body.rememberMe,
                 Map.of("role", u.getRole().name(), "name", u.getName()));

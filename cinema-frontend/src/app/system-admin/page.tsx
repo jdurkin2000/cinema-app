@@ -47,8 +47,12 @@ export default function AdminPage() {
             <span>System Statistics</span>
           </Link>
 
-          <Link href="/system-admin/manage-users" className={buttonStyle}>
+          <Link href="/system-admin/manage-accounts" className={buttonStyle}>
             <span>Manage Accounts</span>
+          </Link>
+
+          <Link href="/system-admin/manage-prices" className={buttonStyle}>
+            <span>Manage Ticket Prices</span>
           </Link>
 
           <Link href="/system-admin/promotions" className={buttonStyle}>

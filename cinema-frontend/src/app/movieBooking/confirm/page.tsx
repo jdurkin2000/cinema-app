@@ -44,6 +44,18 @@ export default function ConfirmPage() {
   const [taxLoading, setTaxLoading] = useState(false);
   const [taxError, setTaxError] = useState<string | null>(null);
   const [hasProfileZip, setHasProfileZip] = useState<boolean>(false);
+  // Stable login redirect href to avoid hydration mismatch
+  const [loginHref, setLoginHref] = useState<string>("/login?next=%2F");
+
+  // Compute login redirect only on client after mount
+  useEffect(() => {
+    try {
+      if (typeof window !== "undefined") {
+        const next = window.location.pathname + (window.location.search || "");
+        setLoginHref(`/login?next=${encodeURIComponent(next)}`);
+      }
+    } catch {}
+  }, []);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
 
   // Track auth token presence and update state when storage changes
@@ -236,14 +248,7 @@ export default function ConfirmPage() {
         {!isLoggedIn && (
           <div className="mb-4 rounded border border-yellow-600 bg-yellow-900 bg-opacity-40 p-3 text-sm text-yellow-200">
             You must be logged in to confirm this booking.
-            <a
-              href={`/login?next=${encodeURIComponent(
-                typeof window === "undefined"
-                  ? "/"
-                  : window.location.pathname + (window.location.search || "")
-              )}`}
-              className="ml-2 underline hover:text-white"
-            >
+            <a href={loginHref} className="ml-2 underline hover:text-white">
               Log in
             </a>
           </div>
@@ -456,12 +461,6 @@ export default function ConfirmPage() {
           {(() => {
             const needsLogin = /log in/i.test(error);
             if (!needsLogin) return null;
-            const nextUrl = (() => {
-              if (typeof window === "undefined") return "/";
-              const url = new URL(window.location.href);
-              return url.pathname + (url.search || "");
-            })();
-            const loginHref = `/login?next=${encodeURIComponent(nextUrl)}`;
             return (
               <a
                 href={loginHref}
