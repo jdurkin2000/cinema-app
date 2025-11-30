@@ -8,6 +8,7 @@ import Link from "next/link";
 import {
   getCurrentlyShowingMovies,
   getUpcomingShowingMovies,
+  getMovieIdsForDate,
 } from "@/libs/showingsApi";
 
 export default function Home() {
@@ -15,6 +16,10 @@ export default function Home() {
   const [upcomingMovies, setUpcomingMovies] = useState<Movie[]>([]);
   const [nameQuery, setNameQuery] = useState<string>("");
   const [genresQuery, setGenresQuery] = useState<string>("");
+  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [movieIdsOnDate, setMovieIdsOnDate] = useState<Set<string>>(new Set());
+  // Only hide Upcoming when a date filter is active
+  const filtersApplied = selectedDate.trim().length > 0;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,6 +45,29 @@ export default function Home() {
     fetchMovies();
   }, []);
 
+  useEffect(() => {
+    // If no date selected, clear filter set
+    if (!selectedDate) {
+      setMovieIdsOnDate(new Set());
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const ids = await getMovieIdsForDate(selectedDate);
+        if (!cancelled) setMovieIdsOnDate(new Set(ids));
+      } catch (err) {
+        console.error("Failed to fetch movie IDs for date", err);
+        if (!cancelled) setMovieIdsOnDate(new Set());
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedDate]);
+
   return (
     <div className="content">
       <form
@@ -62,6 +90,12 @@ export default function Home() {
           value={genresQuery}
           onChange={(e) => setGenresQuery(e.target.value)}
         />
+        <input
+          className="movie-search-input"
+          type="date"
+          value={selectedDate}
+          onChange={(e) => setSelectedDate(e.target.value)}
+        />
         <button className="movie-search-submit" type="submit">
           Search
         </button>
@@ -74,12 +108,40 @@ export default function Home() {
       ) : (
         <>
           <p className="now-showing">Now Showing</p>
-          {getMovieList(filterMovies(nowShowingMovies, nameQuery, genresQuery))}
-          {nowShowingMovies.length == 0 && <p>No movies have been scheduled yet.</p>}
+          {(() => {
+            const filteredNow = filterMovies(nowShowingMovies, nameQuery, genresQuery, selectedDate, movieIdsOnDate);
+            return (
+              <>
+                {getMovieList(filteredNow)}
+                {filteredNow.length === 0 && (
+                  <p className="text-gray-500">No movies match your filters{selectedDate ? " on that date." : "."}</p>
+                )}
+              </>
+            );
+          })()}
 
-          <div className="now-showing">Upcoming</div>
-          {getMovieList(filterMovies(upcomingMovies, nameQuery, genresQuery))}
-          {upcomingMovies.length == 0 && <p>No movies have been added to the database.</p>}
+          {!filtersApplied && (
+            <>
+              <div className="now-showing">Upcoming</div>
+              {(() => {
+                const filteredUpcoming = filterMovies(
+                  upcomingMovies,
+                  nameQuery,
+                  genresQuery,
+                  selectedDate,
+                  movieIdsOnDate
+                );
+                return (
+                  <>
+                    {getMovieList(filteredUpcoming)}
+                    {filteredUpcoming.length === 0 && (
+                      <p className="text-gray-500">No upcoming movies match your filters{selectedDate ? " on that date." : "."}</p>
+                    )}
+                  </>
+                );
+              })()}
+            </>
+          )}
         </>
       )}
     </div>
@@ -126,7 +188,13 @@ function getMovieList(movies: Movie[]): ReactElement {
   );
 }
 
-function filterMovies(movies: Movie[], nameQuery: string, genresQuery: string) {
+function filterMovies(
+  movies: Movie[],
+  nameQuery: string,
+  genresQuery: string,
+  selectedDate?: string,
+  movieIdsOnDate?: Set<string>
+) {
   const name = nameQuery.trim().toLowerCase();
   const genreParts = genresQuery
     .split(",")
@@ -141,6 +209,15 @@ function filterMovies(movies: Movie[], nameQuery: string, genresQuery: string) {
       genreParts.every((g) =>
         m.genres.map((gg) => gg.toLowerCase()).some((gg) => gg.includes(g))
       );
+
+    // If a date is selected, only include movies that have showtimes on that date.
+    // IMPORTANT: when a date is selected and the fetched set is empty, that means
+    // no movies are scheduled on that date — we should return no movies.
+    if (selectedDate) {
+      const onDate = movieIdsOnDate ? movieIdsOnDate.has(m.id) : false;
+      return matchesName && matchesGenres && onDate;
+    }
+
     return matchesName && matchesGenres;
   });
 }
