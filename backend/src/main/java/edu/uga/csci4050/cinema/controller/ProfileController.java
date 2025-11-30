@@ -229,4 +229,63 @@ public class ProfileController {
             return "Amex";
         return "Card";
     }
+
+    @DeleteMapping("/tickets/{ticketNumber}")
+    public ResponseEntity<?> returnTicket(@PathVariable String ticketNumber, Authentication auth) {
+        var u = me(auth).orElse(null);
+        if (u == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        // Find the ticket
+        var ticketOpt = u.getTickets().stream()
+                .filter(t -> t.getTicketNumber().equals(ticketNumber))
+                .findFirst();
+
+        if (ticketOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        var ticket = ticketOpt.get();
+
+        // Check if showtime is at least 60 minutes in the future
+        java.time.Instant now = java.time.Instant.now();
+        java.time.Instant showtime = ticket.getShowtime();
+        long minutesUntilShow = java.time.Duration.between(now, showtime).toMinutes();
+
+        boolean eligibleForRefund = minutesUntilShow >= 60;
+
+        // Remove ticket from user's list
+        u.getTickets().remove(ticket);
+        users.save(u);
+
+        // Send email notification
+        String subject = eligibleForRefund ? "Ticket Refunded" : "Ticket Cancelled";
+        String body = String.format(
+                "Hi %s,\n\n" +
+                        "Your ticket for '%s' on %s has been cancelled.\n" +
+                        "Ticket Number: %s\n" +
+                        "Seats: %s\n\n" +
+                        "%s\n\n" +
+                        "Thank you,\nPeakCinema",
+                u.getName(),
+                ticket.getMovieTitle() != null ? ticket.getMovieTitle() : "Movie",
+                ticket.getShowtime().toString(),
+                ticket.getTicketNumber(),
+                String.join(", ", ticket.getSeats()),
+                eligibleForRefund
+                        ? "Since you cancelled more than 60 minutes before the showtime, you are eligible for a full refund."
+                        : "Since the cancellation was within 60 minutes of the showtime, no refund is available.");
+
+        try {
+            mail.send(u.getEmail(), subject, body);
+        } catch (Exception e) {
+            System.out.println("Failed to send cancellation email: " + e.getMessage());
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "message", "Ticket returned successfully",
+                "refundEligible", eligibleForRefund,
+                "minutesUntilShow", minutesUntilShow));
+    }
 }

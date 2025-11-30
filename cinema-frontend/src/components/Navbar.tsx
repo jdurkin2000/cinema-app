@@ -77,6 +77,9 @@ export default function Navbar() {
             ) : (
               <>
                 <span className="nav-welcome">Welcome, {user}</span>
+                <Link href="/booking-history" className="booking-history-link">
+                  Booking History
+                </Link>
                 <Link href="/profile">Edit Profile</Link>
               </>
             )}

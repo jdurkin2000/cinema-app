@@ -109,12 +109,21 @@ export default function Home() {
         <>
           <p className="now-showing">Now Showing</p>
           {(() => {
-            const filteredNow = filterMovies(nowShowingMovies, nameQuery, genresQuery, selectedDate, movieIdsOnDate);
+            const filteredNow = filterMovies(
+              nowShowingMovies,
+              nameQuery,
+              genresQuery,
+              selectedDate,
+              movieIdsOnDate
+            );
             return (
               <>
                 {getMovieList(filteredNow)}
                 {filteredNow.length === 0 && (
-                  <p className="text-gray-500">No movies match your filters{selectedDate ? " on that date." : "."}</p>
+                  <p className="text-gray-500">
+                    No movies match your filters
+                    {selectedDate ? " on that date." : "."}
+                  </p>
                 )}
               </>
             );
@@ -135,7 +144,10 @@ export default function Home() {
                   <>
                     {getMovieList(filteredUpcoming)}
                     {filteredUpcoming.length === 0 && (
-                      <p className="text-gray-500">No upcoming movies match your filters{selectedDate ? " on that date." : "."}</p>
+                      <p className="text-gray-500">
+                        No upcoming movies match your filters
+                        {selectedDate ? " on that date." : "."}
+                      </p>
                     )}
                   </>
                 );

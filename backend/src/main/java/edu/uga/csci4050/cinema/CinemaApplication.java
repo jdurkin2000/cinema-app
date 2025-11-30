@@ -13,7 +13,7 @@ public class CinemaApplication implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        System.out.println("\n======================================================================\n");
+        System.out.println("\n======================================================================");
         System.out.println("SpringBoot has finished startup process and is ready to receive calls.");
         System.out.println("======================================================================\n");
     }
