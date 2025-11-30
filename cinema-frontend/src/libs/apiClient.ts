@@ -1,7 +1,8 @@
 import axios from "axios";
 import { getToken } from "@/libs/authStore";
+import { API_URL } from "@/config/apiConfig";
 
-const BASE = "http://localhost:8080/api";
+const BASE = API_URL;
 
 const api = axios.create({
   baseURL: BASE,

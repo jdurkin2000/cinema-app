@@ -4,8 +4,9 @@ import Movie from "@/models/movie";
 import { dateReviver, formatDateTime } from "@/utils/dateTimeUtil";
 import { Showroom as ShowroomModel } from "@/models/shows";
 import { getToken } from "@/libs/authStore";
+import { MOVIES_API, PROMOTIONS_API, SHOWROOMS_API } from "@/config/apiConfig";
 
-const baseApiString = "http://localhost:8080/api/movies";
+const baseApiString = MOVIES_API;
 
 /**
  * Represents the query parameters used to filter movies in the cinema API.
@@ -275,7 +276,7 @@ export type CreatePromotionPayload = {
   discountPercent: number;
 };
 
-const promoApiBase = "http://localhost:8080/api/promotions";
+const promoApiBase = PROMOTIONS_API;
 
 /**
  * Fetch all promotions (requires authentication)
@@ -371,7 +372,7 @@ export type Showroom = ShowroomModel;
 // removed stray catch lines that were outside any try block
 // removed stray catch lines that were outside any try block
 
-const showroomApiBase = "http://localhost:8080/api/showrooms";
+const showroomApiBase = SHOWROOMS_API;
 
 /**
  * Fetch all showrooms.

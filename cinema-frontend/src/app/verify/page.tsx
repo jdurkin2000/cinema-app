@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
+import { API_URL } from "@/config/apiConfig";
 
 export default function VerifyPage() {
   const params = useSearchParams();
@@ -9,8 +10,7 @@ export default function VerifyPage() {
   useEffect(() => {
     const token = params.get("token");
     if (token) {
-      
-      const backendUrl = `http://localhost:8080/api/auth/verify?token=${token}`;
+      const backendUrl = `${API_URL}/auth/verify?token=${token}`;
       window.location.href = backendUrl;
     }
   }, [params]);
@@ -18,7 +18,9 @@ export default function VerifyPage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen text-center p-8">
       <h1 className="text-2xl font-bold mb-4">Verifying your email...</h1>
-      <p className="text-gray-600">Please wait while we confirm your account.</p>
+      <p className="text-gray-600">
+        Please wait while we confirm your account.
+      </p>
     </div>
   );
 }

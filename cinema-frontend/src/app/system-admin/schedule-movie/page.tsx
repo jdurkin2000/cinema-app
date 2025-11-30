@@ -6,9 +6,10 @@ import { formatDateTime } from "@/utils/dateTimeUtil";
 import Movie from "@/models/movie";
 import { Showroom, Showtime } from "@/models/shows";
 import { useMovies } from "@/libs/cinemaApi";
+import { SHOWROOMS_API } from "@/config/apiConfig";
 import "./schedule-movie.css";
 
-const showroomsApiBase = "http://localhost:8080/api/showrooms";
+const showroomsApiBase = SHOWROOMS_API;
 
 interface ScheduleMoviePageState {
   showrooms: Showroom[];

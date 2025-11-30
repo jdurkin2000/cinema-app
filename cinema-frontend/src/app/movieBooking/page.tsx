@@ -97,7 +97,8 @@ export default function Home() {
 
   useEffect(() => {
     // Fetch all showrooms
-    fetch(`http://localhost:8080/api/showrooms/${showtime?.roomId}/showtimes`)
+    const { SHOWROOMS_API } = require("@/config/apiConfig");
+    fetch(`${SHOWROOMS_API}/${showtime?.roomId}/showtimes`)
       .then((res) => res.json())
       .then((data: Showroom) => setShowroom(data))
       .catch(() => setShowroom({ id: "error", showtimes: [] }));

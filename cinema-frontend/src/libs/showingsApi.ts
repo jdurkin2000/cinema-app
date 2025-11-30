@@ -1,11 +1,19 @@
 import { Showroom, Showtime } from "@/models/shows";
 import Movie from "@/models/movie";
 import axios from "axios";
-import { toISOString, ensureDate, fromDateInputString } from "@/utils/dateTimeUtil";
+import {
+  toISOString,
+  ensureDate,
+  fromDateInputString,
+} from "@/utils/dateTimeUtil";
+import {
+  SHOWROOMS_API as SHOWROOMS_API_URL,
+  MOVIES_API as MOVIES_API_URL,
+} from "@/config/apiConfig";
 
 const MOVIE_DURATION_MS = 3 * 60 * 60 * 1000; // 3 hours
-const SHOWROOMS_API = "http://localhost:8080/api/showrooms";
-const MOVIES_API = "http://localhost:8080/api/movies";
+const SHOWROOMS_API = SHOWROOMS_API_URL;
+const MOVIES_API = MOVIES_API_URL;
 
 /**
  * Helper function to check if two movie showtimes overlap
@@ -232,7 +240,9 @@ export async function getMovieIdsFromShowrooms(): Promise<string[]> {
  * Fetch movie IDs that have at least one showtime on the provided date.
  * @param date - Date or date-string to check (only date component is used)
  */
-export async function getMovieIdsForDate(date: Date | string): Promise<string[]> {
+export async function getMovieIdsForDate(
+  date: Date | string
+): Promise<string[]> {
   try {
     // If caller passed a date string from an <input type="date">, parse it as local
     // midnight so comparisons use the same local-day semantics as the UI.

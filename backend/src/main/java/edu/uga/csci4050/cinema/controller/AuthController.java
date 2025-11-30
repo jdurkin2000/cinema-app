@@ -7,6 +7,7 @@ import edu.uga.csci4050.cinema.security.JwtService;
 import edu.uga.csci4050.cinema.service.MailService;
 import edu.uga.csci4050.cinema.util.TokenUtil;
 import jakarta.validation.Valid;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,7 +38,7 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody @Valid RegisterRequest body) {
+    public ResponseEntity<?> register(@RequestBody @Valid RegisterRequest body, HttpServletRequest request) {
         if (users.existsByEmail(body.email)) {
             return ResponseEntity.badRequest().body(Map.of("message", "Email already registered"));
         }
@@ -53,7 +54,7 @@ public class AuthController {
         u.setEmailVerifyTokenHash(TokenUtil.sha256(token));
         u.setEmailVerifyExpiry(Instant.now().plus(24, ChronoUnit.HOURS));
 
-        String link = mail.frontendUrl() + "/verify?token=" + token;
+        String link = mail.frontendUrl(request) + "/verify?token=" + token;
         try {
             mail.send(u.getEmail(), "Confirm your Cinema E-Booking account",
                     "Hi " + u.getName() + ",\n\nPlease confirm your email by visiting:\n" + link
@@ -68,7 +69,7 @@ public class AuthController {
     }
 
     @GetMapping("/verify")
-    public ResponseEntity<?> verify(@RequestParam String token) {
+    public ResponseEntity<?> verify(@RequestParam String token, HttpServletRequest request) {
         String h = TokenUtil.sha256(token);
         var u = users.findByEmailVerifyTokenHash(h).orElse(null);
         if (u == null || u.getEmailVerifyExpiry() == null || u.getEmailVerifyExpiry().isBefore(Instant.now())) {
@@ -79,7 +80,7 @@ public class AuthController {
         u.setEmailVerifyTokenHash(null);
         u.setEmailVerifyExpiry(null);
         users.save(u);
-        return ResponseEntity.status(302).location(URI.create(mail.frontendUrl() + "/login?verified=1")).build();
+        return ResponseEntity.status(302).location(URI.create(mail.frontendUrl(request) + "/login?verified=1")).build();
     }
 
     @PostMapping("/login")
@@ -103,14 +104,14 @@ public class AuthController {
     }
 
     @PostMapping("/forgot")
-    public ResponseEntity<?> forgot(@RequestBody @Valid ForgotPasswordRequest body) {
+    public ResponseEntity<?> forgot(@RequestBody @Valid ForgotPasswordRequest body, HttpServletRequest request) {
         var u = users.findByEmail(body.email.toLowerCase()).orElse(null);
         if (u != null) {
             String token = TokenUtil.newUrlToken();
             u.setResetTokenHash(TokenUtil.sha256(token));
             u.setResetTokenExpiry(Instant.now().plus(2, ChronoUnit.HOURS));
             users.save(u);
-            String link = mail.frontendUrl() + "/reset-password?token=" + token;
+            String link = mail.frontendUrl(request) + "/reset-password?token=" + token;
             mail.send(u.getEmail(), "Reset your password", "Reset link (2h):\n" + link);
         }
         return ResponseEntity.ok(Map.of("message", "If the email exists, a reset link was sent."));

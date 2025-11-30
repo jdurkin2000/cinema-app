@@ -120,7 +120,7 @@ public class SecurityConfig {
 
     /**
      * CORS configuration for frontend
-     * Allows specific origins, methods, and credentials
+     * Allows localhost and any local network IP (for team development)
      */
     @Bean
     public WebMvcConfigurer corsConfigurer() {
@@ -128,7 +128,27 @@ public class SecurityConfig {
             @Override
             public void addCorsMappings(@NonNull CorsRegistry registry) {
                 registry.addMapping("/api/**")
-                        .allowedOrigins(allowedOrigins.split(","))
+                        .allowedOriginPatterns(
+                                "http://localhost:*",
+                                "http://127.0.0.1:*",
+                                "http://10.*.*.*:*", // Common private network
+                                "http://192.168.*.*:*", // Common private network
+                                "http://172.16.*.*:*", // Private network range
+                                "http://172.17.*.*:*",
+                                "http://172.18.*.*:*",
+                                "http://172.19.*.*:*",
+                                "http://172.20.*.*:*",
+                                "http://172.21.*.*:*",
+                                "http://172.22.*.*:*",
+                                "http://172.23.*.*:*",
+                                "http://172.24.*.*:*",
+                                "http://172.25.*.*:*",
+                                "http://172.26.*.*:*",
+                                "http://172.27.*.*:*",
+                                "http://172.28.*.*:*",
+                                "http://172.29.*.*:*",
+                                "http://172.30.*.*:*",
+                                "http://172.31.*.*:*")
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
                         .allowedHeaders("*")
                         .allowCredentials(true)

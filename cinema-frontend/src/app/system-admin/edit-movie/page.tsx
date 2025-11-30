@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import Movie from "@/models/movie";
 import axios from "axios";
+import { MOVIES_API } from "@/config/apiConfig";
 
 export default function EditMovieListPage() {
   const [movies, setMovies] = useState<Movie[]>([]);
@@ -13,12 +14,9 @@ export default function EditMovieListPage() {
   useEffect(() => {
     async function fetchMovies() {
       try {
-        const res = await axios.get<Movie[]>(
-          "http://localhost:8080/api/movies",
-          {
-            transformResponse: [(data) => (data ? JSON.parse(data) : null)],
-          }
-        );
+        const res = await axios.get<Movie[]>(MOVIES_API, {
+          transformResponse: [(data) => (data ? JSON.parse(data) : null)],
+        });
         setMovies(Array.isArray(res.data) ? res.data : []);
       } catch (err: any) {
         console.error("Error fetching movies:", err);

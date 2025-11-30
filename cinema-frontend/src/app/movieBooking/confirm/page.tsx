@@ -275,8 +275,9 @@ export default function ConfirmPage() {
                 setPromoLoading(true);
                 setPromoError(null);
                 try {
+                  const { PROMOTIONS_API } = require("@/config/apiConfig");
                   const res = await fetch(
-                    `http://localhost:8080/api/promotions/validate?code=${encodeURIComponent(
+                    `${PROMOTIONS_API}/validate?code=${encodeURIComponent(
                       promoCode.trim()
                     )}`
                   );

@@ -20,7 +20,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/promotions")
-@CrossOrigin(origins = "http://localhost:3000")
 public class PromotionController {
 
     private final PromotionRepository promotions;
