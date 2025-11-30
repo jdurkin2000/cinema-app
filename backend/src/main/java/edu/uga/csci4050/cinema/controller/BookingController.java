@@ -23,6 +23,10 @@ import edu.uga.csci4050.cinema.model.User;
 import edu.uga.csci4050.cinema.repository.ShowroomRepository;
 import edu.uga.csci4050.cinema.repository.UserRepository;
 import edu.uga.csci4050.cinema.repository.MovieRepository;
+import edu.uga.csci4050.cinema.repository.TicketRepository;
+import edu.uga.csci4050.cinema.service.MailService;
+import edu.uga.csci4050.cinema.model.TicketInfo;
+import edu.uga.csci4050.cinema.type.TicketType;
 import edu.uga.csci4050.cinema.type.BookingRequest;
 import edu.uga.csci4050.cinema.type.Showtime;
 
@@ -39,6 +43,12 @@ public class BookingController {
 
     @Autowired
     MovieRepository movieRepository;
+
+    @Autowired
+    TicketRepository ticketRepository;
+
+    @Autowired
+    MailService mailService;
 
     @PostMapping
     public ResponseEntity<Showroom> bookSeats(@RequestBody BookingRequest req, Authentication auth) {
@@ -129,6 +139,43 @@ public class BookingController {
                         user.getTickets().add(tr);
                         userRepository.save(user);
                         System.out.println("Ticket record appended for user: " + user.getEmail());
+
+                        // After persisting the user's ticket record, attempt to send a confirmation email
+                        try {
+                            // Compute simple price breakdown from ticketRepo
+                            var ticketCountsMap = tr.getTicketCounts();
+                            double adultPrice = ticketRepository.findByType(TicketType.ADULT).map(TicketInfo::getPrice).orElse(0.0);
+                            double childPrice = ticketRepository.findByType(TicketType.CHILD).map(TicketInfo::getPrice).orElse(0.0);
+                            double seniorPrice = ticketRepository.findByType(TicketType.SENIOR).map(TicketInfo::getPrice).orElse(0.0);
+                            int aCnt = ticketCountsMap == null ? 0 : ticketCountsMap.getOrDefault("adult", 0);
+                            int cCnt = ticketCountsMap == null ? 0 : ticketCountsMap.getOrDefault("child", 0);
+                            int sCnt = ticketCountsMap == null ? 0 : ticketCountsMap.getOrDefault("senior", 0);
+                            double subtotal = aCnt * adultPrice + cCnt * childPrice + sCnt * seniorPrice;
+
+                            StringBuilder body = new StringBuilder();
+                            body.append("Hello ").append(user.getName() != null ? user.getName() : user.getEmail()).append(",\n\n");
+                            body.append("Your booking is confirmed. Here are the details:\n\n");
+                            body.append("Movie: ");
+                            movieRepository.findById(req.showtime().movieId()).ifPresentOrElse(
+                                m -> body.append(m.getTitle()).append('\n'),
+                                () -> body.append("(unknown)\n")
+                            );
+                            body.append("Showtime: ").append(req.showtime().start()).append('\n');
+                            body.append("Seats: ").append(String.join(", ", req.seats())).append('\n');
+                            body.append("\nTickets:\n");
+                            if (aCnt > 0) body.append("  Adult: ").append(aCnt).append(" x $").append(String.format("%.2f", adultPrice)).append(" = $").append(String.format("%.2f", aCnt * adultPrice)).append('\n');
+                            if (cCnt > 0) body.append("  Child: ").append(cCnt).append(" x $").append(String.format("%.2f", childPrice)).append(" = $").append(String.format("%.2f", cCnt * childPrice)).append('\n');
+                            if (sCnt > 0) body.append("  Senior: ").append(sCnt).append(" x $").append(String.format("%.2f", seniorPrice)).append(" = $").append(String.format("%.2f", sCnt * seniorPrice)).append('\n');
+                            body.append("\nSubtotal: $").append(String.format("%.2f", subtotal)).append('\n');
+                            body.append("Booking ID: ").append(tr.getTicketNumber()).append('\n');
+                            body.append("\nThanks for booking with Cinema App!\n");
+
+                            final String subject = "Your Cinema App Booking - " + (movieRepository.findById(req.showtime().movieId()).map(m -> m.getTitle()).orElse("Movie"));
+                            // Send mail (best effort)
+                            mailService.send(user.getEmail(), subject, body.toString());
+                        } catch (Exception ex) {
+                            System.out.println("Failed to send booking confirmation email: " + ex.getMessage());
+                        }
                     } else {
                         System.out.println("Authenticated user not found in DB: " + auth.getName());
                     }

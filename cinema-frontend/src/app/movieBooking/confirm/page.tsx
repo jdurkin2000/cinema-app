@@ -523,7 +523,7 @@ export default function ConfirmPage() {
           />
           <div className="relative bg-gray-900 text-white rounded-lg shadow-xl w-full max-w-md p-6">
             <h2 className="text-2xl font-bold mb-2">Booking Confirmed</h2>
-            <p className="mb-2">Your seats have been reserved.</p>
+            <p className="mb-2">Your seats have been reserved. A confirmation email will be sent to your account email address.</p>
             <div className="mb-4">
               <div className="text-sm text-gray-300">Movie</div>
               <div className="font-semibold">{savedBooking.movieTitle}</div>

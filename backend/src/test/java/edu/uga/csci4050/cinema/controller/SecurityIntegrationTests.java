@@ -50,6 +50,12 @@ class SecurityIntegrationTests {
     @Autowired
     edu.uga.csci4050.cinema.security.JwtService jwtService;
 
+    @Autowired
+    edu.uga.csci4050.cinema.repository.UserRepository userRepository;
+
+    @Autowired
+    edu.uga.csci4050.cinema.service.MailService mailService;
+
     // No mongoTemplate needed when repositories are disabled
 
     ObjectMapper om = new ObjectMapper();
@@ -64,6 +70,26 @@ class SecurityIntegrationTests {
         @Bean
         edu.uga.csci4050.cinema.security.JwtService jwtService() {
             return mock(edu.uga.csci4050.cinema.security.JwtService.class);
+        }
+
+        @Bean
+        edu.uga.csci4050.cinema.repository.UserRepository userRepository() {
+            return mock(edu.uga.csci4050.cinema.repository.UserRepository.class);
+        }
+
+        @Bean
+        edu.uga.csci4050.cinema.repository.MovieRepository movieRepository() {
+            return mock(edu.uga.csci4050.cinema.repository.MovieRepository.class);
+        }
+
+        @Bean
+        edu.uga.csci4050.cinema.repository.TicketRepository ticketRepository() {
+            return mock(edu.uga.csci4050.cinema.repository.TicketRepository.class);
+        }
+
+        @Bean
+        edu.uga.csci4050.cinema.service.MailService mailService() {
+            return mock(edu.uga.csci4050.cinema.service.MailService.class);
         }
     }
 
@@ -136,9 +162,18 @@ class SecurityIntegrationTests {
 
         var body = "{\"showtime\":{\"movieId\":\"m1\",\"start\":\"2025-01-01T00:00:00Z\",\"roomId\":\"r1\"},\"seats\":[\"A1\",\"A2\"]}";
 
+        // Mock that the authenticated user exists in DB to ensure email is sent
+        edu.uga.csci4050.cinema.model.User user = new edu.uga.csci4050.cinema.model.User();
+        user.setEmail("user@example.com");
+        user.setName("Test User");
+        when(userRepository.findByEmail("user@example.com")).thenReturn(java.util.Optional.of(user));
+
         mvc.perform(post("/api/bookings")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body))
                 .andExpect(status().isOk());
+
+        // Verify mailService.send was called for this user
+        org.mockito.Mockito.verify(mailService).send(org.mockito.Mockito.eq("user@example.com"), org.mockito.Mockito.anyString(), org.mockito.Mockito.anyString());
     }
 }

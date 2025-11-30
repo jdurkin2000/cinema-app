@@ -40,3 +40,9 @@ Movie: {
 "released": string,
 "upcoming": boolean
 }
+
+Booking Confirmation Email:
+
+- When a booking is confirmed via POST /api/bookings, the backend will attempt to send a confirmation email to the authenticated user's email address.
+- The email includes: movie title, showtime, seats, ticket breakdown, subtotal, and booking ID.
+- SMTP configuration for the backend is in `backend/src/main/resources/application.properties`.
