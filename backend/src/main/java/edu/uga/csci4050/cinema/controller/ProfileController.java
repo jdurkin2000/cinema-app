@@ -64,6 +64,21 @@ public class ProfileController {
 
         resp.put("paymentCards", cards);
 
+        // Include ticket history (if any)
+        List<Map<String, Object>> ticketMaps = u.getTickets().stream().map(t -> {
+            Map<String, Object> m = new HashMap<>();
+            m.put("ticketNumber", t.getTicketNumber());
+            m.put("movieId", t.getMovieId());
+            m.put("movieTitle", t.getMovieTitle() != null ? t.getMovieTitle() : "");
+            m.put("showroomId", t.getShowroomId());
+            m.put("showtime", t.getShowtime());
+            m.put("seats", t.getSeats());
+            m.put("ticketCounts", t.getTicketCounts() != null ? t.getTicketCounts() : Map.of());
+            m.put("createdAt", t.getCreatedAt());
+            return m;
+        }).toList();
+        resp.put("tickets", ticketMaps);
+
         return ResponseEntity.ok(resp);
     }
 

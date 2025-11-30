@@ -54,7 +54,7 @@ export default function ConfirmPage() {
         const next = window.location.pathname + (window.location.search || "");
         setLoginHref(`/login?next=${encodeURIComponent(next)}`);
       }
-    } catch {}
+    } catch { }
   }, []);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
 
@@ -171,7 +171,7 @@ export default function ConfirmPage() {
     setError(null);
     try {
       // use shared axios instance which injects Authorization header
-      const resp = await api.post("/bookings", { showtime, seats });
+      const resp = await api.post("/bookings", { showtime, seats, ticketCounts: { adult, child, senior } });
       const saved = resp.data;
 
       const booking = {
@@ -183,9 +183,9 @@ export default function ConfirmPage() {
         subtotal: { value: baseSubtotal },
         promo: appliedPromo
           ? {
-              code: appliedPromo.code,
-              discountPercent: appliedPromo.discountPercent,
-            }
+            code: appliedPromo.code,
+            discountPercent: appliedPromo.discountPercent,
+          }
           : null,
         confirmedAt: new Date().toISOString(),
         backendShowroom: saved.id,

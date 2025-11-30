@@ -4,8 +4,12 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
+import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,7 +18,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import edu.uga.csci4050.cinema.model.Showroom;
+import edu.uga.csci4050.cinema.model.TicketRecord;
+import edu.uga.csci4050.cinema.model.User;
 import edu.uga.csci4050.cinema.repository.ShowroomRepository;
+import edu.uga.csci4050.cinema.repository.UserRepository;
+import edu.uga.csci4050.cinema.repository.MovieRepository;
 import edu.uga.csci4050.cinema.type.BookingRequest;
 import edu.uga.csci4050.cinema.type.Showtime;
 
@@ -26,8 +34,14 @@ public class BookingController {
     @Autowired
     ShowroomRepository showroomRepository;
 
+    @Autowired
+    UserRepository userRepository;
+
+    @Autowired
+    MovieRepository movieRepository;
+
     @PostMapping
-    public ResponseEntity<Showroom> bookSeats(@RequestBody BookingRequest req) {
+    public ResponseEntity<Showroom> bookSeats(@RequestBody BookingRequest req, Authentication auth) {
         System.out.println("\n\n*** BOOKING CONTROLLER CALLED ***");
         System.out.println("Request object: " + req);
 
@@ -93,6 +107,38 @@ public class BookingController {
             Showroom saved = showroomRepository.save(showroom);
             System.out
                     .println("Saved! Booked seats now: " + Arrays.toString(saved.getShowtimes().get(0).bookedSeats()));
+
+            // Persist a ticket record to the authenticated user's document (if available)
+            try {
+                if (auth != null && auth.getName() != null) {
+                    Optional<User> maybeUser = userRepository.findByEmail(auth.getName());
+                    if (maybeUser.isPresent()) {
+                        User user = maybeUser.get();
+                        TicketRecord tr = new TicketRecord();
+                        tr.setTicketNumber(UUID.randomUUID().toString());
+                        tr.setMovieId(req.showtime().movieId());
+                        // Try to populate movie title when available
+                        movieRepository.findById(req.showtime().movieId())
+                                .ifPresent(m -> tr.setMovieTitle(m.getTitle()));
+                        tr.setShowroomId(saved.getId());
+                        tr.setShowtime(req.showtime().start());
+                        tr.setSeats(Arrays.asList(req.seats()));
+                        Map<String, Integer> counts = req.ticketCounts();
+                        tr.setTicketCounts(counts == null ? Map.of() : counts);
+
+                        user.getTickets().add(tr);
+                        userRepository.save(user);
+                        System.out.println("Ticket record appended for user: " + user.getEmail());
+                    } else {
+                        System.out.println("Authenticated user not found in DB: " + auth.getName());
+                    }
+                } else {
+                    System.out.println("No authenticated principal available to persist ticket record.");
+                }
+            } catch (Exception e) {
+                System.out.println("Failed to persist ticket record: " + e.getMessage());
+            }
+
             return ResponseEntity.ok(saved);
         } catch (Exception e) {
             System.out.println("EXCEPTION IN BOOKING CONTROLLER:");
