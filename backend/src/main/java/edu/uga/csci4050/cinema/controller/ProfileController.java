@@ -81,6 +81,17 @@ public class ProfileController {
             m.put("seats", t.getSeats());
             m.put("ticketCounts", t.getTicketCounts() != null ? t.getTicketCounts() : Map.of());
             m.put("createdAt", t.getCreatedAt());
+            if (t.getPaymentCard() != null) {
+                Map<String, Object> pc = new HashMap<>();
+                pc.put("id", t.getPaymentCard().getId());
+                pc.put("brand", t.getPaymentCard().getBrand());
+                pc.put("last4", t.getPaymentCard().getLast4());
+                pc.put("expMonth", t.getPaymentCard().getExpMonth());
+                pc.put("expYear", t.getPaymentCard().getExpYear());
+                pc.put("billingName", t.getPaymentCard().getBillingName());
+                pc.put("billingAddress", t.getPaymentCard().getBillingAddress());
+                m.put("paymentCard", pc);
+            }
             return m;
         }).toList();
         resp.put("tickets", ticketMaps);

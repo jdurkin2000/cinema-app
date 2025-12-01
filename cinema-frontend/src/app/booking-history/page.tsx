@@ -16,6 +16,11 @@ interface TicketRecord {
   seats: string[];
   ticketCounts: { [key: string]: number };
   createdAt: string;
+  paymentCard?: {
+    id?: string;
+    brand?: string;
+    last4?: string;
+  };
 }
 
 export default function BookingHistoryPage() {
@@ -240,6 +245,15 @@ export default function BookingHistoryPage() {
                         {formatDate(ticket.createdAt)}
                       </span>
                     </div>
+                    {ticket.paymentCard?.last4 && (
+                      <div className="detail-row">
+                        <span className="detail-label">Payment Card:</span>
+                        <span className="detail-value">
+                          {ticket.paymentCard?.brand || "Card"} ••••
+                          {ticket.paymentCard.last4}
+                        </span>
+                      </div>
+                    )}
                   </div>
                   {!isPastShow && (
                     <div className="ticket-actions">

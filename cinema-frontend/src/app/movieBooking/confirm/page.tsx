@@ -43,11 +43,11 @@ export default function ConfirmPage() {
   const [salesTaxRate, setSalesTaxRate] = useState<number>(0);
   const [taxLoading, setTaxLoading] = useState(false);
   const [taxError, setTaxError] = useState<string | null>(null);
-  
+
   const [paymentCards, setPaymentCards] = useState<PaymentCard[]>([]);
   const [selectedCardId, setSelectedCardId] = useState<string>("");
   const [showAddCard, setShowAddCard] = useState(false);
-  
+
   // Inline card entry form state
   const [cardNumber, setCardNumber] = useState("");
   const [cardExpMonth, setCardExpMonth] = useState("");
@@ -59,7 +59,7 @@ export default function ConfirmPage() {
   const [billingCity, setBillingCity] = useState("");
   const [billingState, setBillingState] = useState("");
   const [billingZip, setBillingZip] = useState("");
-  
+
   // Stable login redirect href to avoid hydration mismatch
   const [loginHref, setLoginHref] = useState<string>("/login?next=%2F");
 
@@ -70,7 +70,7 @@ export default function ConfirmPage() {
         const next = window.location.pathname + (window.location.search || "");
         setLoginHref(`/login?next=${encodeURIComponent(next)}`);
       }
-    } catch { }
+    } catch {}
   }, []);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
 
@@ -97,7 +97,9 @@ export default function ConfirmPage() {
             const firstCard = profile.paymentCards[0];
             setSelectedCardId(firstCard.id);
             // Auto-fetch tax rate from first card's billing zip
-            const billingZip = firstCard.billingAddress?.zip?.replace(/\D/g, "").slice(0, 5);
+            const billingZip = firstCard.billingAddress?.zip
+              ?.replace(/\D/g, "")
+              .slice(0, 5);
             if (billingZip && billingZip.length === 5) {
               setTaxLoading(true);
               try {
@@ -260,7 +262,12 @@ export default function ConfirmPage() {
     setLoading(true);
     setError(null);
     try {
-      const resp = await api.post("/bookings", { showtime, seats, ticketCounts: { adult, child, senior } });
+      const resp = await api.post("/bookings", {
+        showtime,
+        seats,
+        ticketCounts: { adult, child, senior },
+        paymentCardId: selectedCardId,
+      });
       const saved = resp.data;
 
       const booking = {
@@ -272,9 +279,9 @@ export default function ConfirmPage() {
         subtotal: { value: baseSubtotal },
         promo: appliedPromo
           ? {
-            code: appliedPromo.code,
-            discountPercent: appliedPromo.discountPercent,
-          }
+              code: appliedPromo.code,
+              discountPercent: appliedPromo.discountPercent,
+            }
           : null,
         confirmedAt: new Date().toISOString(),
         backendShowroom: saved.id,
@@ -370,11 +377,14 @@ export default function ConfirmPage() {
                           {card.brand} ••••{card.last4}
                         </div>
                         <div className="text-sm text-gray-400">
-                          Exp: {card.expMonth}/{card.expYear} • {card.billingName}
+                          Exp: {card.expMonth}/{card.expYear} •{" "}
+                          {card.billingName}
                         </div>
                         <div className="text-xs text-gray-500">
-                          {card.billingAddress?.line1}, {card.billingAddress?.city},{" "}
-                          {card.billingAddress?.state} {card.billingAddress?.zip}
+                          {card.billingAddress?.line1},{" "}
+                          {card.billingAddress?.city},{" "}
+                          {card.billingAddress?.state}{" "}
+                          {card.billingAddress?.zip}
                         </div>
                       </div>
                     </label>
@@ -403,7 +413,9 @@ export default function ConfirmPage() {
                       type="text"
                       value={cardNumber}
                       onChange={(e) =>
-                        setCardNumber(e.target.value.replace(/\D/g, "").slice(0, 16))
+                        setCardNumber(
+                          e.target.value.replace(/\D/g, "").slice(0, 16)
+                        )
                       }
                       placeholder="1234567812345678"
                       maxLength={16}
@@ -417,7 +429,9 @@ export default function ConfirmPage() {
                         type="text"
                         value={cardExpMonth}
                         onChange={(e) =>
-                          setCardExpMonth(e.target.value.replace(/\D/g, "").slice(0, 2))
+                          setCardExpMonth(
+                            e.target.value.replace(/\D/g, "").slice(0, 2)
+                          )
                         }
                         placeholder="MM"
                         maxLength={2}
@@ -430,7 +444,9 @@ export default function ConfirmPage() {
                         type="text"
                         value={cardExpYear}
                         onChange={(e) =>
-                          setCardExpYear(e.target.value.replace(/\D/g, "").slice(0, 4))
+                          setCardExpYear(
+                            e.target.value.replace(/\D/g, "").slice(0, 4)
+                          )
                         }
                         placeholder="YYYY"
                         maxLength={4}
@@ -443,7 +459,9 @@ export default function ConfirmPage() {
                         type="text"
                         value={cardCVV}
                         onChange={(e) =>
-                          setCardCVV(e.target.value.replace(/\D/g, "").slice(0, 4))
+                          setCardCVV(
+                            e.target.value.replace(/\D/g, "").slice(0, 4)
+                          )
                         }
                         placeholder="123"
                         maxLength={4}
@@ -472,7 +490,9 @@ export default function ConfirmPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm mb-1">Address Line 2 (Optional)</label>
+                    <label className="block text-sm mb-1">
+                      Address Line 2 (Optional)
+                    </label>
                     <input
                       type="text"
                       value={billingLine2}
@@ -497,7 +517,11 @@ export default function ConfirmPage() {
                       <input
                         type="text"
                         value={billingState}
-                        onChange={(e) => setBillingState(e.target.value.slice(0, 2).toUpperCase())}
+                        onChange={(e) =>
+                          setBillingState(
+                            e.target.value.slice(0, 2).toUpperCase()
+                          )
+                        }
                         placeholder="GA"
                         maxLength={2}
                         className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-white"
@@ -510,7 +534,9 @@ export default function ConfirmPage() {
                       type="text"
                       value={billingZip}
                       onChange={(e) =>
-                        setBillingZip(e.target.value.replace(/\D/g, "").slice(0, 5))
+                        setBillingZip(
+                          e.target.value.replace(/\D/g, "").slice(0, 5)
+                        )
                       }
                       placeholder="30606"
                       maxLength={5}
@@ -532,7 +558,13 @@ export default function ConfirmPage() {
                         alert("Please enter CVV");
                         return;
                       }
-                      if (!billingName || !billingLine1 || !billingCity || !billingState || !billingZip) {
+                      if (
+                        !billingName ||
+                        !billingLine1 ||
+                        !billingCity ||
+                        !billingState ||
+                        !billingZip
+                      ) {
                         alert("Please complete billing address");
                         return;
                       }
@@ -543,10 +575,9 @@ export default function ConfirmPage() {
                           return;
                         }
                         const payload = {
-                          cardNumber,
-                          expMonth: cardExpMonth,
-                          expYear: cardExpYear,
-                          cvv: cardCVV,
+                          number: cardNumber,
+                          expMonth: Number(cardExpMonth),
+                          expYear: Number(cardExpYear),
                           billingName,
                           billingAddress: {
                             line1: billingLine1,
@@ -556,10 +587,17 @@ export default function ConfirmPage() {
                             zip: billingZip,
                           },
                         };
-                        const res = await api.post("/profile/payment-cards", payload);
-                        const newCard = res.data;
-                        setPaymentCards([...paymentCards, newCard]);
-                        setSelectedCardId(newCard.id);
+                        await api.post("/profile/cards", payload);
+                        // Backend returns only id/brand/last4; refetch full profile to populate exp & billing
+                        const profile = await me(token);
+                        if (profile && Array.isArray(profile.paymentCards)) {
+                          setPaymentCards(profile.paymentCards);
+                          const last =
+                            profile.paymentCards[
+                              profile.paymentCards.length - 1
+                            ];
+                          if (last?.id) setSelectedCardId(last.id);
+                        }
                         setShowAddCard(false);
                         setCardNumber("");
                         setCardExpMonth("");
@@ -749,7 +787,10 @@ export default function ConfirmPage() {
           />
           <div className="relative bg-gray-900 text-white rounded-lg shadow-xl w-full max-w-md p-6">
             <h2 className="text-2xl font-bold mb-2">Booking Confirmed</h2>
-            <p className="mb-2">Your seats have been reserved. A confirmation email will be sent to your account email address.</p>
+            <p className="mb-2">
+              Your seats have been reserved. A confirmation email will be sent
+              to your account email address.
+            </p>
             <div className="mb-4">
               <div className="text-sm text-gray-300">Movie</div>
               <div className="font-semibold">{savedBooking.movieTitle}</div>

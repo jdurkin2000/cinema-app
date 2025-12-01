@@ -136,41 +136,80 @@ public class BookingController {
                         Map<String, Integer> counts = req.ticketCounts();
                         tr.setTicketCounts(counts == null ? Map.of() : counts);
 
+                        // Attach selected payment card snapshot if provided
+                        try {
+                            String cardId = req.paymentCardId();
+                            if (cardId != null && !cardId.isBlank()) {
+                                var cards = user.getPaymentCards();
+                                var cardOpt = cards.stream().filter(c -> cardId.equals(c.getId())).findFirst();
+                                if (cardOpt.isPresent()) {
+                                    var card = cardOpt.get();
+                                    // Create a shallow snapshot excluding sensitive numberEnc
+                                    User.PaymentCard snap = new User.PaymentCard();
+                                    snap.setId(card.getId());
+                                    snap.setBrand(card.getBrand());
+                                    snap.setLast4(card.getLast4());
+                                    snap.setExpMonth(card.getExpMonth());
+                                    snap.setExpYear(card.getExpYear());
+                                    snap.setBillingName(card.getBillingName());
+                                    snap.setBillingAddress(card.getBillingAddress());
+                                    snap.setNumberEnc(null); // do not store PAN
+                                    tr.setPaymentCard(snap);
+                                }
+                            }
+                        } catch (Exception ex) {
+                            System.out.println("Failed to attach payment card to ticket: " + ex.getMessage());
+                        }
+
                         user.getTickets().add(tr);
                         userRepository.save(user);
                         System.out.println("Ticket record appended for user: " + user.getEmail());
 
-                        // After persisting the user's ticket record, attempt to send a confirmation email
+                        // After persisting the user's ticket record, attempt to send a confirmation
+                        // email
                         try {
                             // Compute simple price breakdown from ticketRepo
                             var ticketCountsMap = tr.getTicketCounts();
-                            double adultPrice = ticketRepository.findByType(TicketType.ADULT).map(TicketInfo::getPrice).orElse(0.0);
-                            double childPrice = ticketRepository.findByType(TicketType.CHILD).map(TicketInfo::getPrice).orElse(0.0);
-                            double seniorPrice = ticketRepository.findByType(TicketType.SENIOR).map(TicketInfo::getPrice).orElse(0.0);
+                            double adultPrice = ticketRepository.findByType(TicketType.ADULT).map(TicketInfo::getPrice)
+                                    .orElse(0.0);
+                            double childPrice = ticketRepository.findByType(TicketType.CHILD).map(TicketInfo::getPrice)
+                                    .orElse(0.0);
+                            double seniorPrice = ticketRepository.findByType(TicketType.SENIOR)
+                                    .map(TicketInfo::getPrice).orElse(0.0);
                             int aCnt = ticketCountsMap == null ? 0 : ticketCountsMap.getOrDefault("adult", 0);
                             int cCnt = ticketCountsMap == null ? 0 : ticketCountsMap.getOrDefault("child", 0);
                             int sCnt = ticketCountsMap == null ? 0 : ticketCountsMap.getOrDefault("senior", 0);
                             double subtotal = aCnt * adultPrice + cCnt * childPrice + sCnt * seniorPrice;
 
                             StringBuilder body = new StringBuilder();
-                            body.append("Hello ").append(user.getName() != null ? user.getName() : user.getEmail()).append(",\n\n");
+                            body.append("Hello ").append(user.getName() != null ? user.getName() : user.getEmail())
+                                    .append(",\n\n");
                             body.append("Your booking is confirmed. Here are the details:\n\n");
                             body.append("Movie: ");
                             movieRepository.findById(req.showtime().movieId()).ifPresentOrElse(
-                                m -> body.append(m.getTitle()).append('\n'),
-                                () -> body.append("(unknown)\n")
-                            );
+                                    m -> body.append(m.getTitle()).append('\n'),
+                                    () -> body.append("(unknown)\n"));
                             body.append("Showtime: ").append(req.showtime().start()).append('\n');
                             body.append("Seats: ").append(String.join(", ", req.seats())).append('\n');
                             body.append("\nTickets:\n");
-                            if (aCnt > 0) body.append("  Adult: ").append(aCnt).append(" x $").append(String.format("%.2f", adultPrice)).append(" = $").append(String.format("%.2f", aCnt * adultPrice)).append('\n');
-                            if (cCnt > 0) body.append("  Child: ").append(cCnt).append(" x $").append(String.format("%.2f", childPrice)).append(" = $").append(String.format("%.2f", cCnt * childPrice)).append('\n');
-                            if (sCnt > 0) body.append("  Senior: ").append(sCnt).append(" x $").append(String.format("%.2f", seniorPrice)).append(" = $").append(String.format("%.2f", sCnt * seniorPrice)).append('\n');
+                            if (aCnt > 0)
+                                body.append("  Adult: ").append(aCnt).append(" x $")
+                                        .append(String.format("%.2f", adultPrice)).append(" = $")
+                                        .append(String.format("%.2f", aCnt * adultPrice)).append('\n');
+                            if (cCnt > 0)
+                                body.append("  Child: ").append(cCnt).append(" x $")
+                                        .append(String.format("%.2f", childPrice)).append(" = $")
+                                        .append(String.format("%.2f", cCnt * childPrice)).append('\n');
+                            if (sCnt > 0)
+                                body.append("  Senior: ").append(sCnt).append(" x $")
+                                        .append(String.format("%.2f", seniorPrice)).append(" = $")
+                                        .append(String.format("%.2f", sCnt * seniorPrice)).append('\n');
                             body.append("\nSubtotal: $").append(String.format("%.2f", subtotal)).append('\n');
                             body.append("Booking ID: ").append(tr.getTicketNumber()).append('\n');
                             body.append("\nThanks for booking with Cinema App!\n");
 
-                            final String subject = "Your Cinema App Booking - " + (movieRepository.findById(req.showtime().movieId()).map(m -> m.getTitle()).orElse("Movie"));
+                            final String subject = "Your Cinema App Booking - " + (movieRepository
+                                    .findById(req.showtime().movieId()).map(m -> m.getTitle()).orElse("Movie"));
                             // Send mail (best effort)
                             mailService.send(user.getEmail(), subject, body.toString());
                         } catch (Exception ex) {

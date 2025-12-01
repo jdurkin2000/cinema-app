@@ -18,6 +18,8 @@ public class TicketRecord {
   private List<String> seats;
   private Map<String, Integer> ticketCounts; // e.g. {"adult":2, "child":1}
   private Instant createdAt = Instant.now();
+  // Snapshot of payment card used for this ticket (excluding sensitive PAN)
+  private User.PaymentCard paymentCard;
 
   public String getTicketNumber() {
     return ticketNumber;
@@ -81,5 +83,13 @@ public class TicketRecord {
 
   public void setCreatedAt(Instant createdAt) {
     this.createdAt = createdAt;
+  }
+
+  public User.PaymentCard getPaymentCard() {
+    return paymentCard;
+  }
+
+  public void setPaymentCard(User.PaymentCard paymentCard) {
+    this.paymentCard = paymentCard;
   }
 }
