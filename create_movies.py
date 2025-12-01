@@ -82,33 +82,169 @@ SAMPLE_MOVIES = [
         "trailer": "https://www.youtube.com/embed/1Fg5iWmQjwk",
         "rating": "R",
     },
+    # --- Additional movies added ---
+    {
+        "title": "Inception",
+        "genres": ["Action", "Sci-Fi", "Thriller"],
+        "cast": ["Leonardo DiCaprio", "Joseph Gordon-Levitt", "Elliot Page"],
+        "director": "Christopher Nolan",
+        "producer": "Emma Thomas",
+        "synopsis": "A skilled thief enters people's dreams to steal secrets but is offered a chance to erase his criminal history by planting an idea instead.",
+        "reviews": ["Mind-bending visuals", "Intricate plot"],
+        # Alternate poster (previous link reported broken). Using common TMDB asset.
+        "poster": "https://image.tmdb.org/t/p/w500/edv5CZvWj09upOsy2Y6IwDhK8bt.jpg",
+        "trailer": "https://www.youtube.com/embed/YoHD9XEInc0",
+        "rating": "PG13",
+    },
+    {
+        "title": "The Dark Knight",
+        "genres": ["Action", "Crime", "Drama"],
+        "cast": ["Christian Bale", "Heath Ledger", "Gary Oldman"],
+        "director": "Christopher Nolan",
+        "producer": "Charles Roven",
+        "synopsis": "Batman faces the Joker, a criminal mastermind who plunges Gotham City into chaos.",
+        "reviews": ["Ledger's Joker is iconic", "Best superhero crime drama"],
+        "poster": "https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg",
+        "trailer": "https://www.youtube.com/embed/EXeTwQWrcwY",
+        "rating": "PG13",
+    },
+    {
+        "title": "Interstellar",
+        "genres": ["Adventure", "Drama", "Sci-Fi"],
+        "cast": ["Matthew McConaughey", "Anne Hathaway", "Jessica Chastain"],
+        "director": "Christopher Nolan",
+        "producer": "Emma Thomas",
+        "synopsis": "A team of explorers travels through a wormhole in space in an attempt to ensure humanity's survival.",
+        "reviews": ["Emotionally powerful", "Epic space odyssey"],
+        "poster": "https://upload.wikimedia.org/wikipedia/en/b/bc/Interstellar_film_poster.jpg",
+        "trailer": "https://www.youtube.com/embed/zSWdZVtXT7E",
+        "rating": "PG13",
+    },
+    {
+        "title": "Spider-Man: Across the Spider-Verse",
+        "genres": ["Animation", "Action", "Adventure"],
+        "cast": ["Shameik Moore", "Hailee Steinfeld", "Oscar Isaac"],
+        "director": "Joaquim Dos Santos",
+        "producer": "Avi Arad",
+        "synopsis": "Miles Morales catapults across the Multiverse and encounters a team of Spider-People charged with protecting its existence.",
+        "reviews": ["A visual masterpiece", "Bold storytelling"],
+        "poster": "https://image.tmdb.org/t/p/w500/8Vt6mWEReuy4Of61Lnj5Xj704m8.jpg",
+        "trailer": "https://www.youtube.com/embed/cqGjhVJWtEg",
+        "rating": "PG",
+    },
+    {
+        "title": "Inside Out",
+        "genres": ["Animation", "Comedy", "Family"],
+        "cast": ["Amy Poehler", "Phyllis Smith", "Bill Hader"],
+        "director": "Pete Docter",
+        "producer": "Jonas Rivera",
+        "synopsis": "Young Riley's emotions—Joy, Sadness, Anger, Fear, and Disgust—struggle to guide her through a difficult move to a new city.",
+        "reviews": ["Heartfelt and clever", "Great for all ages"],
+        "poster": "https://upload.wikimedia.org/wikipedia/en/0/0a/Inside_Out_%282015_film%29_poster.jpg",
+        "trailer": "https://www.youtube.com/embed/seMwpP0yeu4",
+        "rating": "PG",
+    },
+    {
+        "title": "Toy Story",
+        "genres": ["Animation", "Adventure", "Comedy"],
+        "cast": ["Tom Hanks", "Tim Allen", "Don Rickles"],
+        "director": "John Lasseter",
+        "producer": "Bonnie Arnold",
+        "synopsis": "A cowboy doll is profoundly threatened and jealous when a new spaceman action figure supplants him as top toy.",
+        "reviews": ["Historic CG animation", "Warm and witty"],
+        "poster": "https://upload.wikimedia.org/wikipedia/en/1/13/Toy_Story.jpg",
+        "trailer": "https://www.youtube.com/embed/NTdKQzVnsmY",
+        "rating": "G",
+    },
+    {
+        "title": "The Matrix",
+        "genres": ["Action", "Sci-Fi"],
+        "cast": ["Keanu Reeves", "Laurence Fishburne", "Carrie-Anne Moss"],
+        "director": "Lana Wachowski",
+        "producer": "Joel Silver",
+        "synopsis": "A hacker discovers the reality he lives in is a simulation and joins a rebellion against its controllers.",
+        "reviews": ["Genre-defining action", "Philosophical depth"],
+        "poster": "https://image.tmdb.org/t/p/w500/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg",
+        "trailer": "https://www.youtube.com/embed/vKQi3bBA1y8",
+        "rating": "R",
+    },
+    {
+        "title": "Guardians of the Galaxy Vol. 3",
+        "genres": ["Action", "Adventure", "Sci-Fi"],
+        "cast": ["Chris Pratt", "Zoe Saldaña", "Dave Bautista"],
+        "director": "James Gunn",
+        "producer": "Kevin Feige",
+        "synopsis": "The Guardians rally to defend the universe while protecting one of their own from a mysterious past.",
+        "reviews": ["Emotional conclusion", "Fun space adventure"],
+        # Alternate poster (previous link reported broken)
+        "poster": "https://image.tmdb.org/t/p/w500/5YZbUmjbMa3ClvSW1Wj3D6XGolb.jpg",
+        "trailer": "https://www.youtube.com/embed/u3V5KDHRQvk",
+        "rating": "PG13",
+    },
+    {
+        "title": "Barbie",
+        "genres": ["Comedy", "Fantasy"],
+        "cast": ["Margot Robbie", "Ryan Gosling", "America Ferrera"],
+        "director": "Greta Gerwig",
+        "producer": "David Heyman",
+        "synopsis": "Barbie and Ken leave Barbie Land and discover the joys and perils of living among humans.",
+        "reviews": ["Surprisingly clever", "Stylish and funny"],
+        "poster": "https://upload.wikimedia.org/wikipedia/en/0/0b/Barbie_2023_poster.jpg",
+        "trailer": "https://www.youtube.com/embed/pBk4NYhWNMM",
+        "rating": "PG13",
+    },
+    {
+        "title": "Oppenheimer",
+        "genres": ["Biography", "Drama", "History"],
+        "cast": ["Cillian Murphy", "Emily Blunt", "Robert Downey Jr."],
+        "director": "Christopher Nolan",
+        "producer": "Emma Thomas",
+        "synopsis": "The story of J. Robert Oppenheimer and his role in the development of the atomic bomb.",
+        "reviews": ["Intense and profound", "Masterful filmmaking"],
+        # Updated poster (previous links reported broken). Alternate TMDB asset.
+        "poster": "https://upload.wikimedia.org/wikipedia/en/4/4a/Oppenheimer_%28film%29.jpg",
+        "trailer": "https://www.youtube.com/embed/uYPbbksJxIg",
+        "rating": "R",
+    },
 ]
 
 
 def upsert_movies():
+    client = None
     try:
         client = MongoClient(MONGO_URI)
         db = client[DATABASE_NAME]
         coll = db[COLLECTION_NAME]
 
         inserted = 0
-        replaced = 0
+        updated = 0
+        skipped = 0
 
         for m in SAMPLE_MOVIES:
             title = m.get("title")
             if not title:
                 continue
 
-            # Replace the existing document with the same title or insert if missing
-            result = coll.replace_one({"title": title}, m, upsert=True)
-            if result.matched_count > 0:
-                print(f"~ Replaced movie: {title}")
-                replaced += 1
-            else:
-                print(f"+ Inserted movie: {title}")
-                inserted += 1
+            existing = coll.find_one({"title": title})
+            if existing:
+                # Determine if any key (especially poster/trailer) differs
+                diff_keys = [k for k, v in m.items() if existing.get(k) != v]
+                if diff_keys:
+                    # Only set differing fields to avoid overwriting reviews that may have grown
+                    to_set = {k: m[k] for k in diff_keys}
+                    coll.update_one({"_id": existing["_id"]}, {"$set": to_set})
+                    print(f"* Updated movie: {title} (fields: {', '.join(diff_keys)})")
+                    updated += 1
+                else:
+                    print(f"= Skipped (unchanged): {title}")
+                    skipped += 1
+                continue
 
-        print(f"\nDone. Inserted: {inserted}. Replaced: {replaced}.")
+            coll.insert_one(m)
+            print(f"+ Inserted movie: {title}")
+            inserted += 1
+
+        print(f"\nDone. Inserted: {inserted}. Updated: {updated}. Skipped unchanged: {skipped}.")
 
     except ConnectionFailure:
         print("✗ Error: Could not connect to MongoDB. Check your network/URI.")
@@ -117,10 +253,11 @@ def upsert_movies():
         print("✗ Error while seeding movies:", e)
         sys.exit(1)
     finally:
-        try:
-            client.close()
-        except Exception:
-            pass
+        if client is not None:
+            try:
+                client.close()
+            except Exception:
+                pass
 
 
 if __name__ == "__main__":
