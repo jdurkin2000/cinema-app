@@ -9,6 +9,7 @@ import { Showtime } from "@/models/shows";
 import { getToken } from "@/libs/authStore";
 import { me } from "@/libs/authApi";
 import TicketPrice from "@/models/ticketPrice";
+import { PaymentCard } from "@/models/user";
 
 export default function ConfirmPage() {
   const params = useSearchParams();
@@ -39,12 +40,26 @@ export default function ConfirmPage() {
   const [promoLoading, setPromoLoading] = useState(false);
   const [promoError, setPromoError] = useState<string | null>(null);
 
-  const [zipCode, setZipCode] = useState<string>("");
   const [salesTaxRate, setSalesTaxRate] = useState<number>(0);
   const [taxLoading, setTaxLoading] = useState(false);
   const [taxError, setTaxError] = useState<string | null>(null);
-  const [hasProfileZip, setHasProfileZip] = useState<boolean>(false);
-  const [hasPaymentCard, setHasPaymentCard] = useState<boolean | null>(null);
+  
+  const [paymentCards, setPaymentCards] = useState<PaymentCard[]>([]);
+  const [selectedCardId, setSelectedCardId] = useState<string>("");
+  const [showAddCard, setShowAddCard] = useState(false);
+  
+  // Inline card entry form state
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardExpMonth, setCardExpMonth] = useState("");
+  const [cardExpYear, setCardExpYear] = useState("");
+  const [cardCVV, setCardCVV] = useState("");
+  const [billingName, setBillingName] = useState("");
+  const [billingLine1, setBillingLine1] = useState("");
+  const [billingLine2, setBillingLine2] = useState("");
+  const [billingCity, setBillingCity] = useState("");
+  const [billingState, setBillingState] = useState("");
+  const [billingZip, setBillingZip] = useState("");
+  
   // Stable login redirect href to avoid hydration mismatch
   const [loginHref, setLoginHref] = useState<string>("/login?next=%2F");
 
@@ -68,68 +83,63 @@ export default function ConfirmPage() {
     return () => window.removeEventListener("storage", handler);
   }, []);
 
-  // Fetch user profile on mount to get ZIP code from address and auto-fetch tax
+  // Fetch user profile on mount to get payment cards and auto-fetch tax from billing zip
   useEffect(() => {
-    const fetchProfileZip = async () => {
+    const fetchProfile = async () => {
       try {
         const token = getToken();
         if (!token) return;
         const profile = await me(token);
-        if (profile) {
-          setHasPaymentCard(
-            Array.isArray(profile.paymentCards) && profile.paymentCards.length > 0
-          );
-        }
-        if (profile?.address?.zip) {
-          const profileZip = profile.address.zip.replace(/\D/g, "").slice(0, 5);
-          setZipCode(profileZip);
-          setHasProfileZip(true);
-          // Auto-fetch tax rate if we have a valid 5-digit ZIP
-          if (profileZip.length === 5) {
-            setTaxLoading(true);
-            try {
-              const res = await fetch(
-                `https://api.api-ninjas.com/v1/salestax?zip_code=${profileZip}`,
-                {
-                  headers: {
-                    "X-Api-Key": "BgZqtN2qMXsBPuX0FHh7ng==Y2MaxSXOhhKIdpbu",
-                  },
+        if (profile && Array.isArray(profile.paymentCards)) {
+          setPaymentCards(profile.paymentCards);
+          // Auto-select first card
+          if (profile.paymentCards.length > 0) {
+            const firstCard = profile.paymentCards[0];
+            setSelectedCardId(firstCard.id);
+            // Auto-fetch tax rate from first card's billing zip
+            const billingZip = firstCard.billingAddress?.zip?.replace(/\D/g, "").slice(0, 5);
+            if (billingZip && billingZip.length === 5) {
+              setTaxLoading(true);
+              try {
+                const res = await fetch(
+                  `https://api.api-ninjas.com/v1/salestax?zip_code=${billingZip}`,
+                  {
+                    headers: {
+                      "X-Api-Key": "BgZqtN2qMXsBPuX0FHh7ng==Y2MaxSXOhhKIdpbu",
+                    },
+                  }
+                );
+                if (res.ok) {
+                  const data = await res.json();
+                  const taxData = Array.isArray(data) ? data[0] : data;
+                  if (taxData && taxData.state_rate !== undefined) {
+                    const rate =
+                      typeof taxData.state_rate === "string"
+                        ? parseFloat(taxData.state_rate)
+                        : taxData.state_rate;
+                    setSalesTaxRate(rate);
+                  }
                 }
-              );
-              if (res.ok) {
-                const data = await res.json();
-                console.log(data);
-                // API returns an array with one object
-                const taxData = Array.isArray(data) ? data[0] : data;
-                if (taxData && taxData.state_rate !== undefined) {
-                  const rate =
-                    typeof taxData.state_rate === "string"
-                      ? parseFloat(taxData.state_rate)
-                      : taxData.state_rate;
-                  setSalesTaxRate(rate);
-                }
+              } catch (err) {
+                console.warn("Failed to auto-fetch tax rate:", err);
+              } finally {
+                setTaxLoading(false);
               }
-            } catch (err) {
-              console.warn("Failed to auto-fetch tax rate:", err);
-            } finally {
-              setTaxLoading(false);
             }
           }
         }
       } catch (err) {
-        console.warn("Failed to fetch user profile for ZIP code:", err);
+        console.warn("Failed to fetch user profile:", err);
       }
     };
 
     const fetchTicketPrices = async () => {
       try {
-        // Use shared api client so base URL + auth (if needed) are applied
         const res = await api.get<TicketPrice[]>("/tickets/prices", {
           transformResponse: [(data) => (data ? JSON.parse(data) : null)],
         });
         const data = Array.isArray(res.data) ? res.data : [];
 
-        // Normalize to lowercase keys and avoid mutating existing state object
         const normalized: { adult: number; child: number; senior: number } = {
           adult: 0,
           child: 0,
@@ -138,7 +148,6 @@ export default function ConfirmPage() {
         for (const item of data as Array<
           Partial<TicketPrice> & { ticketType?: string }
         >) {
-          // Support either backend JSON key 'type' or legacy 'ticketType'
           const rawType = item.type || item.ticketType;
           if (!rawType || typeof rawType !== "string") continue;
           const key = rawType.toLowerCase();
@@ -153,10 +162,85 @@ export default function ConfirmPage() {
       }
     };
 
-    fetchProfileZip();
+    fetchProfile();
     fetchTicketPrices();
-    // Run only once on mount; subsequent price-dependent recalculations handled elsewhere
   }, []);
+
+  // Update tax rate when selected card changes
+  useEffect(() => {
+    const fetchTaxForCard = async () => {
+      if (!selectedCardId || paymentCards.length === 0) return;
+      const card = paymentCards.find((c) => c.id === selectedCardId);
+      if (!card?.billingAddress?.zip) return;
+      const zip = card.billingAddress.zip.replace(/\D/g, "").slice(0, 5);
+      if (zip.length !== 5) return;
+      setTaxLoading(true);
+      setTaxError(null);
+      try {
+        const res = await fetch(
+          `https://api.api-ninjas.com/v1/salestax?zip_code=${zip}`,
+          {
+            headers: {
+              "X-Api-Key": "BgZqtN2qMXsBPuX0FHh7ng==Y2MaxSXOhhKIdpbu",
+            },
+          }
+        );
+        if (res.ok) {
+          const data = await res.json();
+          const taxData = Array.isArray(data) ? data[0] : data;
+          if (taxData && taxData.state_rate !== undefined) {
+            const rate =
+              typeof taxData.state_rate === "string"
+                ? parseFloat(taxData.state_rate)
+                : taxData.state_rate;
+            setSalesTaxRate(rate);
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to fetch tax rate:", err);
+      } finally {
+        setTaxLoading(false);
+      }
+    };
+    fetchTaxForCard();
+  }, [selectedCardId, paymentCards]);
+
+  // Update tax from inline form billing zip
+  useEffect(() => {
+    const fetchTaxFromInlineForm = async () => {
+      if (paymentCards.length > 0) return; // Only when adding first card
+      if (billingZip.length !== 5) return;
+      setTaxLoading(true);
+      setTaxError(null);
+      try {
+        const res = await fetch(
+          `https://api.api-ninjas.com/v1/salestax?zip_code=${billingZip}`,
+          {
+            headers: {
+              "X-Api-Key": "BgZqtN2qMXsBPuX0FHh7ng==Y2MaxSXOhhKIdpbu",
+            },
+          }
+        );
+        if (res.ok) {
+          const data = await res.json();
+          const taxData = Array.isArray(data) ? data[0] : data;
+          if (taxData && taxData.state_rate !== undefined) {
+            const rate =
+              typeof taxData.state_rate === "string"
+                ? parseFloat(taxData.state_rate)
+                : taxData.state_rate;
+            setSalesTaxRate(rate);
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to fetch tax rate from inline form:", err);
+      } finally {
+        setTaxLoading(false);
+      }
+    };
+    const timer = setTimeout(fetchTaxFromInlineForm, 500);
+    return () => clearTimeout(timer);
+  }, [billingZip, paymentCards.length]);
 
   // Derived totals
   const baseSubtotal =
@@ -176,7 +260,6 @@ export default function ConfirmPage() {
     setLoading(true);
     setError(null);
     try {
-      // use shared axios instance which injects Authorization header
       const resp = await api.post("/bookings", { showtime, seats, ticketCounts: { adult, child, senior } });
       const saved = resp.data;
 
@@ -203,7 +286,6 @@ export default function ConfirmPage() {
         console.warn("Failed to save booking locally:", err);
       }
 
-      // Show confirmation modal instead of redirecting to profile
       setShowSuccessModal(true);
       setSavedBooking(booking);
     } catch (err: unknown) {
@@ -260,12 +342,248 @@ export default function ConfirmPage() {
           </div>
         )}
 
-        {isLoggedIn && hasPaymentCard === false && (
-          <div className="mb-4 rounded border border-yellow-600 bg-yellow-900 bg-opacity-40 p-3 text-sm text-yellow-200">
-            You don't have a payment card associated with your account.
-            <a href="/profile" className="ml-2 underline hover:text-white">
-              Add a payment method
-            </a>
+        {isLoggedIn && (
+          <div className="mt-4">
+            <h3 className="text-lg font-semibold mb-2">Payment Method</h3>
+            {paymentCards.length > 0 ? (
+              <>
+                <div className="space-y-2">
+                  {paymentCards.map((card) => (
+                    <label
+                      key={card.id}
+                      className="flex items-center gap-3 p-3 border rounded cursor-pointer hover:bg-gray-800 transition"
+                      style={{
+                        borderColor:
+                          selectedCardId === card.id ? "#3b82f6" : "#4b5563",
+                      }}
+                    >
+                      <input
+                        type="radio"
+                        name="paymentCard"
+                        value={card.id}
+                        checked={selectedCardId === card.id}
+                        onChange={(e) => setSelectedCardId(e.target.value)}
+                        className="w-4 h-4"
+                      />
+                      <div>
+                        <div className="font-medium">
+                          {card.brand} ••••{card.last4}
+                        </div>
+                        <div className="text-sm text-gray-400">
+                          Exp: {card.expMonth}/{card.expYear} • {card.billingName}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {card.billingAddress?.line1}, {card.billingAddress?.city},{" "}
+                          {card.billingAddress?.state} {card.billingAddress?.zip}
+                        </div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowAddCard(!showAddCard)}
+                  className="mt-3 text-sm text-blue-400 hover:text-blue-300 underline"
+                >
+                  {showAddCard ? "Cancel" : "+ Add a new card"}
+                </button>
+              </>
+            ) : (
+              <div className="mb-2 text-sm text-gray-400">
+                No payment cards on file. Please add one below.
+              </div>
+            )}
+            {(showAddCard || paymentCards.length === 0) && (
+              <div className="mt-4 p-4 border border-gray-700 rounded bg-gray-800">
+                <h4 className="text-md font-semibold mb-3">Add Payment Card</h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm mb-1">Card Number</label>
+                    <input
+                      type="text"
+                      value={cardNumber}
+                      onChange={(e) =>
+                        setCardNumber(e.target.value.replace(/\D/g, "").slice(0, 16))
+                      }
+                      placeholder="1234567812345678"
+                      maxLength={16}
+                      className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-white"
+                    />
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-sm mb-1">Exp Month</label>
+                      <input
+                        type="text"
+                        value={cardExpMonth}
+                        onChange={(e) =>
+                          setCardExpMonth(e.target.value.replace(/\D/g, "").slice(0, 2))
+                        }
+                        placeholder="MM"
+                        maxLength={2}
+                        className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm mb-1">Exp Year</label>
+                      <input
+                        type="text"
+                        value={cardExpYear}
+                        onChange={(e) =>
+                          setCardExpYear(e.target.value.replace(/\D/g, "").slice(0, 4))
+                        }
+                        placeholder="YYYY"
+                        maxLength={4}
+                        className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm mb-1">CVV</label>
+                      <input
+                        type="text"
+                        value={cardCVV}
+                        onChange={(e) =>
+                          setCardCVV(e.target.value.replace(/\D/g, "").slice(0, 4))
+                        }
+                        placeholder="123"
+                        maxLength={4}
+                        className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-white"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm mb-1">Billing Name</label>
+                    <input
+                      type="text"
+                      value={billingName}
+                      onChange={(e) => setBillingName(e.target.value)}
+                      placeholder="John Doe"
+                      className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm mb-1">Address Line 1</label>
+                    <input
+                      type="text"
+                      value={billingLine1}
+                      onChange={(e) => setBillingLine1(e.target.value)}
+                      placeholder="123 Main St"
+                      className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm mb-1">Address Line 2 (Optional)</label>
+                    <input
+                      type="text"
+                      value={billingLine2}
+                      onChange={(e) => setBillingLine2(e.target.value)}
+                      placeholder="Apt 4B"
+                      className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-white"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm mb-1">City</label>
+                      <input
+                        type="text"
+                        value={billingCity}
+                        onChange={(e) => setBillingCity(e.target.value)}
+                        placeholder="Athens"
+                        className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm mb-1">State</label>
+                      <input
+                        type="text"
+                        value={billingState}
+                        onChange={(e) => setBillingState(e.target.value.slice(0, 2).toUpperCase())}
+                        placeholder="GA"
+                        maxLength={2}
+                        className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-white"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm mb-1">ZIP Code</label>
+                    <input
+                      type="text"
+                      value={billingZip}
+                      onChange={(e) =>
+                        setBillingZip(e.target.value.replace(/\D/g, "").slice(0, 5))
+                      }
+                      placeholder="30606"
+                      maxLength={5}
+                      className="w-full rounded border border-gray-700 bg-gray-900 px-3 py-2 text-white"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!cardNumber || cardNumber.length < 13) {
+                        alert("Please enter a valid card number");
+                        return;
+                      }
+                      if (!cardExpMonth || !cardExpYear) {
+                        alert("Please enter card expiration");
+                        return;
+                      }
+                      if (!cardCVV || cardCVV.length < 3) {
+                        alert("Please enter CVV");
+                        return;
+                      }
+                      if (!billingName || !billingLine1 || !billingCity || !billingState || !billingZip) {
+                        alert("Please complete billing address");
+                        return;
+                      }
+                      try {
+                        const token = getToken();
+                        if (!token) {
+                          alert("Please log in");
+                          return;
+                        }
+                        const payload = {
+                          cardNumber,
+                          expMonth: cardExpMonth,
+                          expYear: cardExpYear,
+                          cvv: cardCVV,
+                          billingName,
+                          billingAddress: {
+                            line1: billingLine1,
+                            line2: billingLine2,
+                            city: billingCity,
+                            state: billingState,
+                            zip: billingZip,
+                          },
+                        };
+                        const res = await api.post("/profile/payment-cards", payload);
+                        const newCard = res.data;
+                        setPaymentCards([...paymentCards, newCard]);
+                        setSelectedCardId(newCard.id);
+                        setShowAddCard(false);
+                        setCardNumber("");
+                        setCardExpMonth("");
+                        setCardExpYear("");
+                        setCardCVV("");
+                        setBillingName("");
+                        setBillingLine1("");
+                        setBillingLine2("");
+                        setBillingCity("");
+                        setBillingState("");
+                        setBillingZip("");
+                        alert("Card added successfully");
+                      } catch (err: unknown) {
+                        console.error("Failed to add card:", err);
+                        alert("Failed to add card. Please try again.");
+                      }
+                    }}
+                    className="w-full bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded"
+                  >
+                    Save Card
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -349,88 +667,6 @@ export default function ConfirmPage() {
           )}
         </div>
 
-        {!hasProfileZip && (
-          <div className="mt-4">
-            <label className="block text-sm font-medium mb-1" htmlFor="zipCode">
-              ZIP Code (for sales tax)
-            </label>
-            <div className="flex items-center gap-2">
-              <input
-                id="zipCode"
-                name="zipCode"
-                value={zipCode}
-                onChange={(e) =>
-                  setZipCode(e.target.value.replace(/\D/g, "").slice(0, 5))
-                }
-                placeholder="Enter ZIP code"
-                maxLength={5}
-                className="w-full max-w-xs rounded-md border border-gray-700 bg-gray-800 px-3 py-2 text-white"
-              />
-              <button
-                className="bg-blue-600 hover:bg-blue-700 px-3 py-2 rounded text-sm"
-                onClick={async () => {
-                  if (!zipCode.trim() || zipCode.length !== 5) {
-                    setTaxError("Please enter a valid 5-digit ZIP code");
-                    return;
-                  }
-                  setTaxLoading(true);
-                  setTaxError(null);
-                  try {
-                    const res = await fetch(
-                      `https://api.api-ninjas.com/v1/salestax?zip_code=${zipCode}`,
-                      {
-                        headers: {
-                          "X-Api-Key":
-                            "BgZqtN2qMXsBPuX0FHh7ng==Y2MaxSXOhhKIdpbu",
-                        },
-                      }
-                    );
-                    if (!res.ok) {
-                      setTaxError(`Error fetching tax rate: ${res.status}`);
-                      setSalesTaxRate(0);
-                      setTaxLoading(false);
-                      return;
-                    }
-                    const data = await res.json();
-                    // API returns an array with one object
-                    const taxData = Array.isArray(data) ? data[0] : data;
-                    if (taxData && taxData.state_rate !== undefined) {
-                      const rate =
-                        typeof taxData.state_rate === "string"
-                          ? parseFloat(taxData.state_rate)
-                          : taxData.state_rate;
-                      setSalesTaxRate(rate);
-                    } else {
-                      setTaxError("Invalid response from tax API");
-                      setSalesTaxRate(0);
-                    }
-                  } catch (err: unknown) {
-                    if (err instanceof Error) {
-                      console.error(err);
-                    } else {
-                      console.error("Unknown tax API error", err);
-                    }
-                    setTaxError("Failed to fetch sales tax rate");
-                    setSalesTaxRate(0);
-                  } finally {
-                    setTaxLoading(false);
-                  }
-                }}
-              >
-                {taxLoading ? "Fetching..." : "Get Tax Rate"}
-              </button>
-            </div>
-            {taxError && (
-              <p className="text-red-400 text-sm mt-1">{taxError}</p>
-            )}
-            {salesTaxRate > 0 && (
-              <p className="text-green-400 text-sm mt-1">
-                Sales tax rate: {(salesTaxRate * 100).toFixed(2)}%
-              </p>
-            )}
-          </div>
-        )}
-
         <div className="border-t border-gray-700 mt-4 pt-4">
           <div className="flex justify-between">
             <span className="font-semibold">Subtotal</span>
@@ -449,42 +685,32 @@ export default function ConfirmPage() {
               </span>
             </div>
           )}
-          {(() => {
-            return (
-              <>
-                {salesTaxRate > 0 && (
-                  <div className="flex justify-between mt-2">
-                    <span className="text-sm">
-                      Sales Tax ({(salesTaxRate * 100).toFixed(2)}%)
-                    </span>
-                    <span className="text-sm">${taxAmount.toFixed(2)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between mt-3 font-semibold">
-                  <span>Total</span>
-                  <span className="font-bold">${grandTotal.toFixed(2)}</span>
-                </div>
-              </>
-            );
-          })()}
+          {salesTaxRate > 0 && (
+            <div className="flex justify-between mt-2">
+              <span className="text-sm">
+                Sales Tax ({(salesTaxRate * 100).toFixed(2)}%)
+              </span>
+              <span className="text-sm">${taxAmount.toFixed(2)}</span>
+            </div>
+          )}
+          <div className="flex justify-between mt-3 font-semibold">
+            <span>Total</span>
+            <span className="font-bold">${grandTotal.toFixed(2)}</span>
+          </div>
         </div>
       </div>
 
       {error && (
         <div className="bg-red-900 border border-red-600 text-red-200 px-4 py-3 rounded w-full max-w-xl space-y-2">
           <div>{error}</div>
-          {(() => {
-            const needsLogin = /log in/i.test(error);
-            if (!needsLogin) return null;
-            return (
-              <a
-                href={loginHref}
-                className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm"
-              >
-                Go to Login
-              </a>
-            );
-          })()}
+          {/log in/i.test(error) && (
+            <a
+              href={loginHref}
+              className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm"
+            >
+              Go to Login
+            </a>
+          )}
         </div>
       )}
 
@@ -496,7 +722,8 @@ export default function ConfirmPage() {
             seats.length === 0 ||
             loading ||
             !isLoggedIn ||
-            (isLoggedIn && hasPaymentCard === false)
+            (isLoggedIn && paymentCards.length === 0 && !showAddCard) ||
+            (isLoggedIn && paymentCards.length > 0 && !selectedCardId)
           }
         >
           {isLoggedIn
@@ -514,7 +741,6 @@ export default function ConfirmPage() {
         </button>
       </div>
 
-      {/* Success modal shown after booking completes */}
       {showSuccessModal && savedBooking && (
         <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-24">
           <div

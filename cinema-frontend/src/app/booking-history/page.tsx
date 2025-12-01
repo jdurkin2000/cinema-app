@@ -87,8 +87,23 @@ export default function BookingHistoryPage() {
     return Math.floor((showtime.getTime() - now.getTime()) / (1000 * 60));
   };
 
-  const handleReturnTicket = async (ticketNumber: string) => {
-    if (!confirm("Are you sure you want to return this ticket?")) {
+  const handleReturnTicket = async (
+    ticketNumber: string,
+    showtimeStr: string
+  ) => {
+    const minutesUntilShow = getMinutesUntilShow(showtimeStr);
+
+    // Block returns if less than 60 minutes before showtime
+    if (minutesUntilShow < 60) {
+      alert("Tickets cannot be returned within 60 minutes of showtime.");
+      return;
+    }
+
+    if (
+      !confirm(
+        "Are you sure you want to return this ticket? You will receive a full refund."
+      )
+    ) {
       return;
     }
 
@@ -124,14 +139,12 @@ export default function BookingHistoryPage() {
         );
       }
 
-      const result = await response.json();
+      await response.json();
 
-      // Show refund eligibility message
-      const message = result.refundEligible
-        ? `Ticket returned successfully! You are eligible for a full refund (cancelled ${result.minutesUntilShow} minutes before showtime). A confirmation email has been sent.`
-        : `Ticket returned. Since the cancellation was within 60 minutes of the showtime, no refund is available. A confirmation email has been sent.`;
-
-      alert(message);
+      // Show success message (only eligible returns are allowed)
+      alert(
+        "Ticket returned successfully! You will receive a full refund. A confirmation email has been sent."
+      );
 
       // Remove ticket from local state
       setTickets((prev) => prev.filter((t) => t.ticketNumber !== ticketNumber));
@@ -170,7 +183,7 @@ export default function BookingHistoryPage() {
       <h1>Booking History</h1>
       {tickets.length === 0 ? (
         <div className="no-bookings">
-          <p>You haven't made any bookings yet.</p>
+          <p>You haven&apos;t made any bookings yet.</p>
           <button onClick={() => router.push("/")} className="back-button">
             Browse Movies
           </button>
@@ -231,8 +244,16 @@ export default function BookingHistoryPage() {
                   {!isPastShow && (
                     <div className="ticket-actions">
                       <button
-                        onClick={() => handleReturnTicket(ticket.ticketNumber)}
-                        disabled={returningTicket === ticket.ticketNumber}
+                        onClick={() =>
+                          handleReturnTicket(
+                            ticket.ticketNumber,
+                            ticket.showtime
+                          )
+                        }
+                        disabled={
+                          returningTicket === ticket.ticketNumber ||
+                          !eligibleForRefund
+                        }
                         className={`return-button ${
                           !eligibleForRefund ? "no-refund" : ""
                         }`}
