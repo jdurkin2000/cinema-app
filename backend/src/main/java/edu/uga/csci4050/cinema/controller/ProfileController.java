@@ -2,7 +2,10 @@ package edu.uga.csci4050.cinema.controller;
 
 import edu.uga.csci4050.cinema.controller.dto.ProfileDtos.*;
 import edu.uga.csci4050.cinema.model.User;
+import edu.uga.csci4050.cinema.model.Showroom;
 import edu.uga.csci4050.cinema.repository.UserRepository;
+import edu.uga.csci4050.cinema.repository.ShowroomRepository;
+import edu.uga.csci4050.cinema.type.Showtime;
 import edu.uga.csci4050.cinema.security.CryptoService;
 import edu.uga.csci4050.cinema.service.MailService;
 import jakarta.validation.Valid;
@@ -22,12 +25,15 @@ import java.util.Optional;
 public class ProfileController {
 
     private final UserRepository users;
+    private final ShowroomRepository showrooms;
     private final PasswordEncoder encoder;
     private final CryptoService crypto;
     private final MailService mail;
 
-    public ProfileController(UserRepository users, PasswordEncoder encoder, CryptoService crypto, MailService mail) {
+    public ProfileController(UserRepository users, ShowroomRepository showrooms, PasswordEncoder encoder,
+            CryptoService crypto, MailService mail) {
         this.users = users;
+        this.showrooms = showrooms;
         this.encoder = encoder;
         this.crypto = crypto;
         this.mail = mail;
@@ -258,6 +264,42 @@ public class ProfileController {
         // Remove ticket from user's list
         u.getTickets().remove(ticket);
         users.save(u);
+
+        // Attempt to free seats on the associated showtime
+        try {
+            if (ticket.getShowroomId() != null && ticket.getShowtime() != null) {
+                var showroomOpt = showrooms.findById(ticket.getShowroomId());
+                if (showroomOpt.isPresent()) {
+                    Showroom showroom = showroomOpt.get();
+                    var sts = showroom.getShowtimes();
+                    if (sts != null) {
+                        for (int i = 0; i < sts.size(); i++) {
+                            Showtime st = sts.get(i);
+                            if (st != null
+                                    && ticket.getMovieId() != null
+                                    && ticket.getMovieId().equals(st.movieId())
+                                    && ticket.getShowtime().equals(st.start())) {
+                                // remove the seats from bookedSeats
+                                java.util.Set<String> seatSet = new java.util.HashSet<>();
+                                if (st.bookedSeats() != null) {
+                                    seatSet.addAll(java.util.Arrays.asList(st.bookedSeats()));
+                                }
+                                if (ticket.getSeats() != null) {
+                                    seatSet.removeAll(ticket.getSeats());
+                                }
+                                Showtime updated = new Showtime(st.movieId(), st.start(),
+                                        seatSet.toArray(new String[0]), st.roomId());
+                                sts.set(i, updated);
+                                showrooms.save(showroom);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            System.out.println("Failed to free seats for returned ticket: " + ex.getMessage());
+        }
 
         // Send email notification
         String subject = eligibleForRefund ? "Ticket Refunded" : "Ticket Cancelled";

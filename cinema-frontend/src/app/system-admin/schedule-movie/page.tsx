@@ -261,9 +261,20 @@ export default function ScheduleMoviePage() {
 
   return (
     <div className="schedule-movie-container">
+      {/* Floating error just under the fixed Navbar */}
+      {state.error && (
+        <div className="floating-alert floating-error" role="alert">
+          <span>{state.error}</span>
+          <button
+            className="floating-close"
+            aria-label="Dismiss error"
+            onClick={() => setState((p) => ({ ...p, error: null }))}
+          >
+            ×
+          </button>
+        </div>
+      )}
       <h1>Schedule Movie Showtime</h1>
-
-      {state.error && <div className="alert alert-error">{state.error}</div>}
       {state.success && (
         <div className="alert alert-success">{state.success}</div>
       )}
