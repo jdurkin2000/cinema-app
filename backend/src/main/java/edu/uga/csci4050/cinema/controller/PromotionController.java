@@ -78,9 +78,18 @@ public class PromotionController {
      */
     @PostMapping
     public ResponseEntity<?> create(@RequestBody @Valid CreatePromotionRequest body) {
+        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        System.out.println("[PromotionController#create] auth=" + (auth == null ? "null" : auth.getName())
+                + ", authorities=" + (auth == null ? "null" : auth.getAuthorities()));
         String code = body.code != null ? body.code.trim() : "";
         if (code.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("message", "Promo code is required"));
+        }
+        // Enforce max length of 6 characters for promo codes
+        if (code.length() > 6) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message",
+                            "Promo code is too long. Maximum length is 6 characters."));
         }
         if (promotions.existsByCodeIgnoreCase(code)) {
             return ResponseEntity.badRequest().body(Map.of("message", "Promo code already exists"));
@@ -121,6 +130,9 @@ public class PromotionController {
      */
     @PostMapping("/{promotionId}/send")
     public ResponseEntity<?> sendPromotion(@PathVariable String promotionId) {
+        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        System.out.println("[PromotionController#send] auth=" + (auth == null ? "null" : auth.getName())
+                + ", authorities=" + (auth == null ? "null" : auth.getAuthorities()));
         var promoOpt = promotions.findById(promotionId);
         var promo = promoOpt.orElse(null);
         if (promo == null) {

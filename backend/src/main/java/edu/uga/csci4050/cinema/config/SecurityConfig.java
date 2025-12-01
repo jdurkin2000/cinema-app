@@ -70,6 +70,8 @@ public class SecurityConfig {
 
                 // Authorization rules
                 .authorizeHttpRequests(auth -> auth
+                        // Debug endpoint (dev only) - permit all to observe token parsing result EARLY
+                        .requestMatchers("/api/debug/**").permitAll()
                         // Always allow CORS preflight requests
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         // Public authentication endpoints
@@ -104,6 +106,8 @@ public class SecurityConfig {
 
                         // Promotion management requires authentication
                         .requestMatchers("/api/promotions/**").authenticated()
+
+                        // (already permitted above)
 
                         // Bookings require authentication
                         .requestMatchers("/api/bookings/**").authenticated()
@@ -158,6 +162,11 @@ public class SecurityConfig {
 
             if (auth != null && auth.startsWith("Bearer ")) {
                 String token = auth.substring(7);
+                if (token == null || token.isBlank()) {
+                    // Empty bearer token; skip parsing and remain unauthenticated
+                    chain.doFilter(req, res);
+                    return;
+                }
                 try {
                     var jws = jwt.parse(token);
                     Claims claims = jws.getBody();
@@ -174,7 +183,8 @@ public class SecurityConfig {
                     }
                 } catch (Exception e) {
                     // Invalid token - remain unauthenticated
-                    // You could log this for security monitoring
+                    System.err.println(
+                            "[JwtFilter] Token parse failed: " + e.getClass().getSimpleName() + ": " + e.getMessage());
                     SecurityContextHolder.clearContext();
                 }
             }

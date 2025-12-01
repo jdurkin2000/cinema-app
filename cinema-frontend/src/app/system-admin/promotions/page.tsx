@@ -9,6 +9,7 @@ import {
   Promotion,
   getPromotions,
 } from "@/libs/cinemaApi";
+import { getToken } from "@/libs/authStore";
 import { formatDate } from "@/utils/dateTimeUtil";
 import "./promotions.css";
 
@@ -23,13 +24,15 @@ export default function PromotionsPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [lastPromotionId, setLastPromotionId] = useState<string | null>(null);
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [promosLoading, setPromosLoading] = useState(false);
+  const [selectedExistingId, setSelectedExistingId] = useState<string>("");
 
   const validate = () => {
     const trimmedCode = code.trim();
     if (!trimmedCode) return "Promo code is required.";
+    if (trimmedCode.length > 6)
+      return "Promo code is too long. Maximum length is 6 characters.";
     if (!startDate || !endDate) return "Start and end date are required.";
 
     const discount = Number(discountPercent);
@@ -56,7 +59,6 @@ export default function PromotionsPage() {
   // Initial load
   useEffect(() => {
     loadPromotions();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleCreate = async () => {
@@ -78,59 +80,25 @@ export default function PromotionsPage() {
         discountPercent: Number(discountPercent),
       };
 
-      const promotion = await createPromotion(payload);
-      setLastPromotionId(promotion.id);
+      const token = getToken();
+      const promotion = await createPromotion(payload, {
+        token: token ?? undefined,
+      });
+      await loadPromotions();
 
       setSuccess(
-        `Promotion created (ID: ${promotion.id}). You can now send it.`
+        `Promotion "${promotion.code}" created successfully. Select it below to send to subscribers.`
       );
-    } catch (err: any) {
-      setError(err.message || "Failed to create promotion.");
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : "Failed to create promotion.";
+      setError(msg);
     } finally {
       setBusy(false);
     }
   };
 
-  const handleSend = async () => {
-    setError(null);
-    setSuccess(null);
-    setBusy(true);
-    try {
-      let promotionId = lastPromotionId;
-
-      // If we don't have a created promotion yet, create it from the form data
-      if (!promotionId) {
-        const validation = validate();
-        if (validation) {
-          setError(validation);
-          setBusy(false);
-          return;
-        }
-
-        const payload: CreatePromotionPayload = {
-          code: code.trim(),
-          startDate,
-          endDate,
-          discountPercent: Number(discountPercent),
-        };
-
-        const created = await createPromotion(payload);
-        promotionId = created.id;
-        setLastPromotionId(promotionId);
-        setSuccess(`Promotion created (ID: ${promotionId}).`);
-        await loadPromotions();
-      }
-
-      // Now send the promotion email
-      const result = await sendPromotion(promotionId);
-      await loadPromotions();
-      setSuccess(`Promotion sent to ${result.emailsSent} subscribed user(s).`);
-    } catch (err: any) {
-      setError(err.message || "Failed to send promotion.");
-    } finally {
-      setBusy(false);
-    }
-  };
+  // Optional: provide a button to use handleCreate directly
 
   return (
     <main className="promo-main">
@@ -204,11 +172,11 @@ export default function PromotionsPage() {
           <div className="button-row">
             <button
               type="button"
-              onClick={handleSend}
+              onClick={handleCreate}
               disabled={busy}
               className="btn btn-green"
             >
-              {busy ? "Working…" : "Create and Send Promotion"}
+              {busy ? "Working…" : "Create Promotion"}
             </button>
 
             <button
@@ -227,18 +195,65 @@ export default function PromotionsPage() {
           ) : promotions.length === 0 ? (
             <p>No promotions found.</p>
           ) : (
-            <ul className="promo-list">
-              {promotions.map((p) => (
-                <li key={p.id} className="promo-item">
-                  <strong>{p.code}</strong>
-                  <span className="promo-meta"> — {p.discountPercent}%</span>
-                  <span className="promo-meta">
-                    {" "}
-                    — {formatDate(p.startDate)} to {formatDate(p.endDate)}
-                  </span>
-                </li>
-              ))}
-            </ul>
+            <>
+              <ul className="promo-list">
+                {promotions.map((p) => (
+                  <li key={p.id} className="promo-item">
+                    <label className="promo-select-item">
+                      <input
+                        type="radio"
+                        name="existing-promo"
+                        value={p.id}
+                        checked={selectedExistingId === p.id}
+                        onChange={(e) => setSelectedExistingId(e.target.value)}
+                      />
+                      <strong className="ml-2">{p.code}</strong>
+                      <span className="promo-meta">
+                        {" "}
+                        — {p.discountPercent}%
+                      </span>
+                      <span className="promo-meta">
+                        {" "}
+                        — {formatDate(p.startDate)} to {formatDate(p.endDate)}
+                      </span>
+                    </label>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="button-row mt-4">
+                <button
+                  type="button"
+                  disabled={busy || !selectedExistingId}
+                  className="btn btn-green"
+                  onClick={async () => {
+                    setError(null);
+                    setSuccess(null);
+                    setBusy(true);
+                    try {
+                      const token = getToken();
+                      const result = await sendPromotion(selectedExistingId, {
+                        token: token ?? undefined,
+                      });
+                      await loadPromotions();
+                      setSuccess(
+                        `Existing promotion sent to ${result.emailsSent} subscribed user(s).`
+                      );
+                    } catch (err: unknown) {
+                      const msg =
+                        err instanceof Error
+                          ? err.message
+                          : "Failed to send existing promotion to subscribers.";
+                      setError(msg);
+                    } finally {
+                      setBusy(false);
+                    }
+                  }}
+                >
+                  {busy ? "Working…" : "Send Selected Promotion to Subscribers"}
+                </button>
+              </div>
+            </>
           )}
         </section>
       </div>
